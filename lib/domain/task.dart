@@ -1,19 +1,6 @@
-import 'package:floor/floor.dart';
-import 'package:taskium/domain/user.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-@Entity(
-  tableName: 'Task',
-  foreignKeys: [
-    ForeignKey(
-      childColumns: ['userId'],
-      parentColumns: ['username'],
-      entity: User,
-      onDelete: ForeignKeyAction.cascade, // Delete tasks if the user is deleted
-    ),
-  ],
-)
 class Task {
-  @PrimaryKey(autoGenerate: true)
   final int? id;
 
   final String title;
@@ -42,4 +29,43 @@ class Task {
     this.completedAt,
     required this.userId,
   });
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'imageUrl': imageUrl,
+      'dueDate': dueDate,
+      'category': category,
+      'priority': priority,
+      'progress': progress,
+      'isCompleted': isCompleted,
+      'createdAt': createdAt,
+      'completedAt': completedAt,
+      'userId': userId,
+    };
+  }
+
+  static Task fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> snapshot,
+    SnapshotOptions? options,
+  ) {
+    final data = snapshot.data();
+
+    return Task(
+      id: data?['id'],
+      title: data?['title'] ?? '',
+      description: data?['description'] ?? '',
+      imageUrl: data?['imageUrl'],
+      dueDate: data?['dueDate'],
+      category: data?['category'] ?? 'General',
+      priority: data?['priority'] ?? 0,
+      progress: data?['progress'] ?? 0,
+      isCompleted: data?['isCompleted'] ?? false,
+      createdAt: data?['createdAt'],
+      completedAt: data?['completedAt'],
+      userId: data?['userId'] ?? '',
+    );
+  }
 }
