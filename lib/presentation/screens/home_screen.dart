@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:taskium/domain/task.dart';
-import 'package:taskium/main.dart';
+import 'package:taskium/presentation/providers/tasks_provider.dart';
 import 'package:taskium/presentation/providers/theme_provider.dart';
 import 'package:taskium/presentation/widgets/task_item.dart';
 
@@ -14,11 +14,19 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeNotifier = ref.read(themeNotifierProvider.notifier);
-    var tasksFuture = database.tasksDao.getTasksByUserId(username);
+    final tasksAsync = ref.watch(taskNotifierProvider);
+    final taskNotifier = ref.read(taskNotifierProvider.notifier);
 
-    void _refreshTasks() {
-      tasksFuture = database.tasksDao.getTasksByUserId(username);
-    }
+    // late TasksNotifier taskNotifier;
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   taskNotifier = ref.read(taskNotifierProvider.notifier);
+    // });
+
+    // var tasksFuture = database.tasksDao.getTasksByUserId(username);
+
+    // void _refreshTasks() {
+    //   tasksFuture = database.tasksDao.getTasksByUserId(username);
+    // }
 
     return Scaffold(
       appBar: AppBar(
@@ -98,8 +106,8 @@ class HomeScreen extends ConsumerWidget {
         ),
       ),
       body: _TasksView(
-        tasksFuture: tasksFuture,
-        onTasksUpdated: _refreshTasks, // Pass the callback to _TasksView
+        tasks: tasksAsync,
+        onTasksUpdated: () => taskNotifier.fetchTasks(), // Pass the callback to _TasksView
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
@@ -107,8 +115,8 @@ class HomeScreen extends ConsumerWidget {
           try {
             newTask = await context.push('/edit', extra: {'userId': username}) as Task?;
             if (newTask != null) {
-              await database.tasksDao.insertTask(newTask);
-              _refreshTasks(); // Refresh tasks after adding a new one
+              taskNotifier.addTask(newTask);
+              // taskNotifier.fetchTasks(); // Refresh tasks after adding a new one
             }
           } catch (e) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -130,55 +138,38 @@ class HomeScreen extends ConsumerWidget {
 
 class _TasksView extends StatelessWidget {
   const _TasksView({
-    required this.tasksFuture,
+    required this.tasks,
     required this.onTasksUpdated,
   });
 
-  final Future<List<Task>> tasksFuture;
+  final List<Task> tasks;
   final VoidCallback onTasksUpdated; // Callback to notify HomeScreen
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Task>>(
-      future: tasksFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('No tasks available.'));
-        } else {
-          final tasks = snapshot.data!;
+    if (tasks.isEmpty) {
+      return const Center(child: Text('No tasks available.'));
+    }
 
-          final priorities = [
-            {'label': 'Priority 3', 'color': Colors.red, 'value': 3},
-            {'label': 'Priority 2', 'color': Colors.orange, 'value': 2},
-            {'label': 'Priority 1', 'color': Colors.blue, 'value': 1},
-            {'label': 'Priority 0', 'color': Colors.grey, 'value': 0},
-          ];
+    final priorities = [
+      {'label': 'Priority 3', 'color': Colors.red, 'value': 3},
+      {'label': 'Priority 2', 'color': Colors.orange, 'value': 2},
+      {'label': 'Priority 1', 'color': Colors.blue, 'value': 1},
+      {'label': 'Priority 0', 'color': Colors.grey, 'value': 0},
+    ];
 
-          final hasTasks = tasks.isNotEmpty;
-
-          return hasTasks
-              ? ListView(
-                  padding: const EdgeInsets.all(8.0),
-                  children: priorities
-                      .map((priority) => _buildPrioritySection(
-                            label: priority['label'] as String,
-                            color: priority['color'] as Color,
-                            priorityValue: priority['value'] as int,
-                            tasks: tasks,
-                            onTasksUpdated: onTasksUpdated,
-                            context: context,
-                          ))
-                      .toList(),
-                )
-              : const Center(
-                  child: Text('No tasks available for any priority.'),
-                );
-        }
-      },
+    return ListView(
+      padding: const EdgeInsets.all(8.0),
+      children: priorities
+          .map((priority) => _buildPrioritySection(
+                label: priority['label'] as String,
+                color: priority['color'] as Color,
+                priorityValue: priority['value'] as int,
+                tasks: tasks,
+                onTasksUpdated: onTasksUpdated,
+                context: context,
+              ))
+          .toList(),
     );
   }
 

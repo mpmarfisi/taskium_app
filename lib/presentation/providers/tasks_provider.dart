@@ -20,10 +20,8 @@ class TasksNotifier extends Notifier<List<Task>> {
 
   Future<void> fetchTasks() async {
     try {
-      final tasks = await _tasksRepository.getTasksByUserId();
-      for(var element in tasks){
-        print('Task: ${element.title}, ID: ${element.id}');
-      }
+      final tasks = await _tasksRepository.getTasksByUserId('user123'); // Replace with actual user ID
+      state = tasks;
     } catch (e) {
       throw Exception('Failed to fetch tasks: $e');
     }
