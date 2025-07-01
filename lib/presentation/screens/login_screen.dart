@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:taskium/data/user_dao.dart';
 import 'package:taskium/domain/user.dart';
 import 'package:taskium/main.dart';
+import 'package:firebase_auth/firebase_auth.dart' as auth;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -26,23 +27,27 @@ class _LoginScreenState extends State<LoginScreen> {
     final UserDao userDao = database.userDao;
     final User? user = await userDao.getUserByUsername(usernameController.text);
 
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Username does not exist')),
+    try {
+      final credential = await auth.FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: usernameController.text,
+        password: passwordController.text
       );
+    } on auth.FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        print('No user found for that email.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Username does not exist')),
+        );
+      } else if (e.code == 'wrong-password') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Incorrect password')),
+        );
+        print('Wrong password provided for that user.');
+      }
       return;
     }
 
-    if (user.password != passwordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Incorrect password')),
-      );
-      return;
-    }
-
-    // Navigate to the home screen
-    if (!mounted) return;
-    context.go('/home', extra: user.username);
+    context.go('/home', extra: usernameController.text);
   }
 
   @override
