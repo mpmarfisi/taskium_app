@@ -15,6 +15,7 @@
 .vscode/
 lib/firebase_options.dart
 firebase.json
+android/app/google-services.json
 
 # As packages are no longer pinned, we use a lockfile for testing locally.
 # When unpinning packages, Using lockfiles ensures that failures in PRs are
