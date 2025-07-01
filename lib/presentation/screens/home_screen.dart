@@ -105,10 +105,19 @@ class HomeScreen extends ConsumerWidget {
           ],
         ),
       ),
-      body: _TasksView(
-        tasks: tasksAsync,
-        onTasksUpdated: () => taskNotifier.fetchTasks(), // Pass the callback to _TasksView
-      ),
+      body: tasksAsync.when(
+        data: (tasks) {
+          if (tasks.isEmpty) {
+            return const Center(child: Text('No tasks available.'));
+          }
+          return _TasksView(
+            tasks: tasks,
+            onTasksUpdated: () => taskNotifier.fetchTasks(), // Pass the callback to _TasksView
+          );
+        },
+        error: (error, stackTrace) => Center(child: Text('Error: $error')),
+        loading: () => const Center(child: CircularProgressIndicator()),
+      ), 
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final Task? newTask;
