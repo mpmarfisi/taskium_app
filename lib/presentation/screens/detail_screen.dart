@@ -1,59 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:taskium/domain/task.dart';
-import 'package:taskium/main.dart';
+import 'package:taskium/presentation/viewmodels/notifiers/detail_notifier.dart';
+import 'package:taskium/presentation/viewmodels/states/detail_state.dart';
 
-class DetailScreen extends StatefulWidget{
+class DetailScreen extends ConsumerStatefulWidget {
   const DetailScreen({
     super.key,
     required this.taskId,
+    this.task,
   });
 
   final int taskId;
+  final Task? task;
 
   @override
-  State<DetailScreen> createState() => _DetailScreenState();
+  ConsumerState<DetailScreen> createState() => _DetailScreenState();
 }
 
-class _DetailScreenState extends State<DetailScreen> {
-  Task? task;
-  bool isLoading = true;
-  bool hasChanges = false;
-  String? errorMessage;
-
+class _DetailScreenState extends ConsumerState<DetailScreen> {
   @override
   void initState() {
     super.initState();
-    _loadTask();
-  }
-
-  Future<void> _loadTask() async {
-    try {
-      final fetchedTask = await database.tasksDao.getTaskById(widget.taskId);
-      if (fetchedTask == null) {
-        setState(() {
-          errorMessage = 'Task not found.';
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          task = fetchedTask;
-          isLoading = false;
-        });
+    // Initialize with the passed task
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.task != null) {
+        ref.read(detailNotifierProvider.notifier).initialize(widget.task!);
       }
-    } catch (e) {
-      setState(() {
-        errorMessage = 'Error: $e';
-        isLoading = false;
-      });
-    }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final detailState = ref.watch(detailNotifierProvider);
+    final detailNotifier = ref.read(detailNotifierProvider.notifier);
+
     return WillPopScope(
       onWillPop: () async {
-        context.pop(hasChanges);
+        context.pop(detailState.hasChanges);
         return false;
       },
       child: Scaffold(
@@ -62,20 +47,23 @@ class _DetailScreenState extends State<DetailScreen> {
           actions: [
             IconButton(
               icon: const Icon(Icons.edit),
-              onPressed: task == null ? null : () async {
-                final updatedTask = await context.push('/edit', extra: {'task': task, 'userId': task!.userId});
-                if (updatedTask != null) {
-                  await database.tasksDao.updateTask(updatedTask as Task);
-                  setState(() {
-                    task = updatedTask;
-                    hasChanges = true;
-                  });
-                }
-              },
+              onPressed: detailState.task == null || detailState.screenState.isLoading || detailState.screenState.isDeleting
+                  ? null
+                  : () async {
+                      final updatedTask = await context.push('/edit', extra: {
+                        'task': detailState.task,
+                        'userId': detailState.task!.userId
+                      });
+                      if (updatedTask != null) {
+                        detailNotifier.updateTask(updatedTask as Task);
+                      }
+                    },
             ),
             IconButton(
               icon: const Icon(Icons.delete),
-              onPressed: task == null ? null : () async {
+              onPressed: detailState.task == null || detailState.screenState.isLoading || detailState.screenState.isDeleting
+                  ? null
+                  : () async {
                       showDialog(
                         context: context,
                         builder: (context) {
@@ -87,12 +75,11 @@ class _DetailScreenState extends State<DetailScreen> {
                                 onPressed: () => context.pop(),
                                 child: const Text('Cancel'),
                               ),
-                        FilledButton(
+                              FilledButton(
                                 onPressed: () async {
-                                  await database.tasksDao.deleteTask(task!);
                                   context.pop();
-                                  context.pop(true);
-                                }, 
+                                  await detailNotifier.deleteTask();
+                                },
                                 child: const Text('Delete'),
                               ),
                             ],
@@ -103,11 +90,51 @@ class _DetailScreenState extends State<DetailScreen> {
             ),
           ],
         ),
-        body: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : errorMessage != null
-                ? Center(child: Text(errorMessage!))
-                : TaskDetailView(task: task!),
+        body: detailState.screenState.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          idle: () => detailState.task == null
+              ? const Center(child: Text('Task not found'))
+              : TaskDetailView(task: detailState.task!),
+          error: () => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Error: ${detailState.errorMessage}'),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => detailNotifier.clearError(),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+          deleting: () => const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Deleting task...'),
+              ],
+            ),
+          ),
+          deleted: () {
+            // Navigate back when deleted
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              context.pop(true);
+            });
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green, size: 64),
+                  SizedBox(height: 16),
+                  Text('Task deleted successfully'),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -254,6 +281,8 @@ class SlideSecondView extends StatelessWidget {
         ),
       ),
     );
+  }
+}
   }
 }
 

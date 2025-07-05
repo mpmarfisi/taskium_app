@@ -62,13 +62,29 @@ class TasksRepository implements FirebaseTaskDataSource {
   @override
   Future<void> addTask(Task task) async {
     try {
+      // Generate a unique ID for the task
+      final taskWithId = Task(
+        id: DateTime.now().millisecondsSinceEpoch, // Use timestamp as ID
+        title: task.title,
+        description: task.description,
+        imageUrl: task.imageUrl,
+        dueDate: task.dueDate,
+        category: task.category,
+        priority: task.priority,
+        progress: task.progress,
+        isCompleted: task.isCompleted,
+        createdAt: task.createdAt,
+        completedAt: task.completedAt,
+        userId: task.userId,
+      );
+
       await _firestore
           .collection(_collection)
           .withConverter(
             fromFirestore: Task.fromFirestore,
             toFirestore: (Task task, _) => task.toFirestore(),
           )
-          .add(task);
+          .add(taskWithId);
     } catch (e) {
       throw Exception('Failed to add task: $e');
     }

@@ -26,8 +26,11 @@ final appRouter = GoRouter(
      builder: (context, state) {
       final taskIdString = state.pathParameters['taskId'];
       final taskIdInt = int.tryParse(taskIdString ?? '') ?? 1;
+      final task = state.extra as Task?; // Get the task object if passed
+      
       return DetailScreen(
         taskId: taskIdInt,
+        task: task,
       );
     }),
     GoRoute(

@@ -2,35 +2,45 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:taskium/domain/task.dart';
-import 'package:taskium/presentation/providers/tasks_provider.dart';
 import 'package:taskium/presentation/providers/theme_provider.dart';
+import 'package:taskium/presentation/viewmodels/notifiers/home_notifier.dart';
+import 'package:taskium/presentation/viewmodels/states/home_state.dart';
 import 'package:taskium/presentation/widgets/task_item.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key, required this.username});
 
   final String username;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize with user's tasks
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(homeNotifierProvider.notifier).initialize(widget.username);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themeNotifier = ref.read(themeNotifierProvider.notifier);
-    final tasksAsync = ref.watch(taskNotifierProvider);
-    final taskNotifier = ref.read(taskNotifierProvider.notifier);
-
-    // late TasksNotifier taskNotifier;
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   taskNotifier = ref.read(taskNotifierProvider.notifier);
-    // });
-
-    // var tasksFuture = database.tasksDao.getTasksByUserId(username);
-
-    // void _refreshTasks() {
-    //   tasksFuture = database.tasksDao.getTasksByUserId(username);
-    // }
+    final homeState = ref.watch(homeNotifierProvider);
+    final homeNotifier = ref.read(homeNotifierProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Home'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => homeNotifier.refreshTasks(widget.username),
+          ),
+        ],
       ),
       drawer: Drawer(
         child: ListView(
@@ -60,7 +70,7 @@ class HomeScreen extends ConsumerWidget {
               title: const Text('Profile'),
               onTap: () {
                 context.pop(context); // Close the drawer
-                context.push('/profile', extra: username);
+                context.push('/profile', extra: widget.username);
               },
             ),
             ListTile(
@@ -105,27 +115,56 @@ class HomeScreen extends ConsumerWidget {
           ],
         ),
       ),
-      body: tasksAsync.when(
-        data: (tasks) {
-          if (tasks.isEmpty) {
-            return const Center(child: Text('No tasks available.'));
-          }
-          return _TasksView(
-            tasks: tasks,
-            onTasksUpdated: () => taskNotifier.fetchTasks(), // Pass the callback to _TasksView
-          );
-        },
-        error: (error, stackTrace) => Center(child: Text('Error: $error')),
+      body: homeState.screenState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-      ), 
+        empty: () => const Center(child: Text('No tasks available.')),
+        error: () => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Error: ${homeState.errorMessage}'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => homeNotifier.fetchTasks(widget.username),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+        refreshing: () => Stack(
+          children: [
+            _TasksView(
+              tasks: homeState.tasks,
+              onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
+            ),
+            const Center(child: CircularProgressIndicator()),
+          ],
+        ),
+        submitting: () => Stack(
+          children: [
+            _TasksView(
+              tasks: homeState.tasks,
+              onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
+            ),
+            const Center(child: CircularProgressIndicator()),
+          ],
+        ),
+        success: () => _TasksView(
+          tasks: homeState.tasks,
+          onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
+        ),
+        idle: () => _TasksView(
+          tasks: homeState.tasks,
+          onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
+        onPressed: homeState.screenState.isSubmitting ? null : () async {
           final Task? newTask;
           try {
-            newTask = await context.push('/edit', extra: {'userId': username}) as Task?;
+            newTask = await context.push('/edit', extra: {'userId': widget.username}) as Task?;
             if (newTask != null) {
-              taskNotifier.addTask(newTask);
-              // taskNotifier.fetchTasks(); // Refresh tasks after adding a new one
+              homeNotifier.addTask(newTask);
             }
           } catch (e) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -215,9 +254,9 @@ class _TasksView extends StatelessWidget {
         ...filteredTasks.map((task) => TaskItem(
               task: task,
               onTap: () async {
-                final result = await context.push('/task-details/${task.id}');
-                if (result == true) {
-                  onTasksUpdated(); // Notify HomeScreen to refresh tasks
+                final hasChanges = await context.push('/task-details/${task.id}', extra: task) as bool?;
+                if (hasChanges == true) {
+                  onTasksUpdated(); // Only refresh if there were changes
                 }
               },
             )),
