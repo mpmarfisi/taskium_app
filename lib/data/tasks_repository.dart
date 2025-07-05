@@ -24,7 +24,7 @@ class TasksRepository implements FirebaseTaskDataSource {
   }
 
   @override
-  Future<List<Task>> getTask(int id) async {
+  Future<List<Task>> getTask(String id) async {
     try {
       final querySnapshot = await _firestore
           .collection(_collection)
@@ -61,30 +61,17 @@ class TasksRepository implements FirebaseTaskDataSource {
 
   @override
   Future<void> addTask(Task task) async {
+    final tasksCollection = _firestore
+        .collection(_collection)
+        .withConverter(
+          fromFirestore: Task.fromFirestore,
+          toFirestore: (Task task, _) => task.toFirestore(),
+        );
     try {
-      // Generate a unique ID for the task
-      final taskWithId = Task(
-        id: DateTime.now().millisecondsSinceEpoch, // Use timestamp as ID
-        title: task.title,
-        description: task.description,
-        imageUrl: task.imageUrl,
-        dueDate: task.dueDate,
-        category: task.category,
-        priority: task.priority,
-        progress: task.progress,
-        isCompleted: task.isCompleted,
-        createdAt: task.createdAt,
-        completedAt: task.completedAt,
-        userId: task.userId,
-      );
-
-      await _firestore
-          .collection(_collection)
-          .withConverter(
-            fromFirestore: Task.fromFirestore,
-            toFirestore: (Task task, _) => task.toFirestore(),
-          )
-          .add(taskWithId);
+      // Use add() to let Firestore generate the document ID
+      final docRef = await tasksCollection.add(task);
+      // Optionally, update the task with the generated ID if you want to store it in the document
+      // await docRef.set(task.copyWith(id: docRef.id));
     } catch (e) {
       throw Exception('Failed to add task: $e');
     }
@@ -92,48 +79,26 @@ class TasksRepository implements FirebaseTaskDataSource {
 
   @override
   Future<void> updateTask(Task task) async {
+    final tasksCollection = _firestore
+        .collection(_collection)
+        .withConverter(
+          fromFirestore: Task.fromFirestore,
+          toFirestore: (Task task, _) => task.toFirestore(),
+        );
     try {
       if (task.id == null) {
         throw Exception('Task ID cannot be null for update operation');
       }
-
-      final querySnapshot = await _firestore
-          .collection(_collection)
-          .where('id', isEqualTo: task.id)
-          .get();
-
-      if (querySnapshot.docs.isEmpty) {
-        throw Exception('Task with id ${task.id} not found');
-      }
-
-      final docId = querySnapshot.docs.first.id;
-      await _firestore
-          .collection(_collection)
-          .doc(docId)
-          .withConverter(
-            fromFirestore: Task.fromFirestore,
-            toFirestore: (Task task, _) => task.toFirestore(),
-          )
-          .set(task);
+      await tasksCollection.doc(task.id).set(task, SetOptions(merge: true));
     } catch (e) {
       throw Exception('Failed to update task: $e');
     }
   }
 
   @override
-  Future<void> deleteTask(int id) async {
+  Future<void> deleteTask(String id) async {
     try {
-      final querySnapshot = await _firestore
-          .collection(_collection)
-          .where('id', isEqualTo: id)
-          .get();
-
-      if (querySnapshot.docs.isEmpty) {
-        throw Exception('Task with id $id not found');
-      }
-
-      final docId = querySnapshot.docs.first.id;
-      await _firestore.collection(_collection).doc(docId).delete();
+      await _firestore.collection(_collection).doc(id).delete();
     } catch (e) {
       throw Exception('Failed to delete task with id $id: $e');
     }

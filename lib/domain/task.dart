@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Task {
-  final int? id;
+  final String? id;
 
   final String title;
   final String description;
@@ -31,8 +31,7 @@ class Task {
   });
 
   Map<String, dynamic> toFirestore() {
-    return {
-      'id': id,
+    final map = {
       'title': title,
       'description': description,
       'imageUrl': imageUrl,
@@ -45,6 +44,7 @@ class Task {
       'completedAt': completedAt,
       'userId': userId,
     };
+    return map;
   }
 
   static Task fromFirestore(
@@ -54,7 +54,7 @@ class Task {
     final data = snapshot.data();
 
     return Task(
-      id: data?['id'],
+      id: snapshot.id, // Always use the Firestore document ID
       title: data?['title'] ?? '',
       description: data?['description'] ?? '',
       imageUrl: data?['imageUrl'],

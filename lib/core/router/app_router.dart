@@ -22,14 +22,14 @@ final appRouter = GoRouter(
       },
     ),
     GoRoute(
-     path: '/task-details/:taskId', 
+    //  path: '/task-details/:taskId', 
+     path: '/task-details', 
      builder: (context, state) {
-      final taskIdString = state.pathParameters['taskId'];
-      final taskIdInt = int.tryParse(taskIdString ?? '') ?? 1;
-      final task = state.extra as Task?; // Get the task object if passed
+      // final taskId = state.pathParameters['taskId'] ?? '';
+      final task = state.extra as Task;
       
       return DetailScreen(
-        taskId: taskIdInt,
+        // taskId: taskId,
         task: task,
       );
     }),

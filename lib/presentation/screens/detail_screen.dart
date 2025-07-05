@@ -8,27 +8,36 @@ import 'package:taskium/presentation/viewmodels/states/detail_state.dart';
 class DetailScreen extends ConsumerStatefulWidget {
   const DetailScreen({
     super.key,
-    required this.taskId,
-    this.task,
+    // required this.taskId,
+    required this.task,
   });
 
-  final int taskId;
-  final Task? task;
+  // final String taskId;
+  final Task task;
 
   @override
   ConsumerState<DetailScreen> createState() => _DetailScreenState();
 }
 
 class _DetailScreenState extends ConsumerState<DetailScreen> {
+  bool _hasPoppedAfterDelete = false;
+
   @override
   void initState() {
     super.initState();
-    // Initialize with the passed task
+    _hasPoppedAfterDelete = false;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.task != null) {
-        ref.read(detailNotifierProvider.notifier).initialize(widget.task!);
-      }
+      ref.read(detailNotifierProvider.notifier).initialize(widget.task);
     });
+  }
+
+  @override
+  void didUpdateWidget(DetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.task != widget.task) {
+      _hasPoppedAfterDelete = false;
+      ref.read(detailNotifierProvider.notifier).initialize(widget.task);
+    }
   }
 
   @override
@@ -38,6 +47,9 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
 
     return WillPopScope(
       onWillPop: () async {
+        if (_hasPoppedAfterDelete) {
+          return false;
+        }
         context.pop(detailState.hasChanges);
         return false;
       },
@@ -93,7 +105,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
         body: detailState.screenState.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           idle: () => detailState.task == null
-              ? const Center(child: Text('Task not found'))
+              ? TaskDetailView(task: widget.task) // Use widget.task as fallback
               : TaskDetailView(task: detailState.task!),
           error: () => Center(
             child: Column(
@@ -119,10 +131,14 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
             ),
           ),
           deleted: () {
-            // Navigate back when deleted
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              context.pop(true);
-            });
+            if (!_hasPoppedAfterDelete) {
+              _hasPoppedAfterDelete = true;
+              Future.delayed(const Duration(milliseconds: 1000), () {
+                if (mounted && context.canPop()) {
+                  context.pop(true);
+                }
+              });
+            }
             return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -283,6 +299,3 @@ class SlideSecondView extends StatelessWidget {
     );
   }
 }
-  }
-}
-

@@ -17,11 +17,12 @@ class DetailNotifier extends Notifier<DetailState> {
   }
 
   void initialize(Task task) {
+    print('DetailNotifier: Initializing with task: ${task.id} - ${task.title}'); // Debug print
     state = state.copyWith(
       screenState: DetailScreenState.idle,
       task: task,
       errorMessage: null,
-      hasChanges: false,
+      hasChanges: false, // Always reset hasChanges
     );
   }
 
@@ -56,7 +57,7 @@ class DetailNotifier extends Notifier<DetailState> {
       state = state.copyWith(
         screenState: DetailScreenState.deleted,
         errorMessage: null,
-        hasChanges: true,
+        hasChanges: false, // Don't trigger another pop
       );
     } catch (e) {
       state = state.copyWith(
@@ -79,4 +80,3 @@ class DetailNotifier extends Notifier<DetailState> {
 }
 
 final detailNotifierProvider = NotifierProvider<DetailNotifier, DetailState>(() => DetailNotifier());
-        

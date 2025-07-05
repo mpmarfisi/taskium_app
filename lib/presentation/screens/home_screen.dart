@@ -254,7 +254,9 @@ class _TasksView extends StatelessWidget {
         ...filteredTasks.map((task) => TaskItem(
               task: task,
               onTap: () async {
-                final hasChanges = await context.push('/task-details/${task.id}', extra: task) as bool?;
+                print('Navigating to task details with task: ${task.id}'); // Debug print
+                // final hasChanges = await context.push('/task-details/${task.id}', extra: task) as bool?;
+                final hasChanges = await context.push('/task-details/', extra: task) as bool?;
                 if (hasChanges == true) {
                   onTasksUpdated(); // Only refresh if there were changes
                 }

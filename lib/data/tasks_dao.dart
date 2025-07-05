@@ -7,13 +7,13 @@ abstract class TasksDao {
   Future<List<Task>> getAllTasks();
 
   @Query('SELECT * FROM Task WHERE id = :id')
-  Future<Task?> getTaskById(int id);
+  Future<Task?> getTaskById(String id);
 
   @Query('SELECT * FROM Task WHERE userId = :userId')
   Future<List<Task>> getTasksByUserId(String userId);
 
   @Query('SELECT * FROM Task WHERE id = :id AND userId = :userId')
-  Future<Task?> getTaskByIdAndUserId(int id, String userId);
+  Future<Task?> getTaskByIdAndUserId(String id, String userId);
 
   @insert
   Future<void> insertTask(Task task);

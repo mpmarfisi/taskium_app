@@ -28,17 +28,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _fetchUserData() async {
-    final fetchedUser = await database.userDao.getUserByUsername(widget.username);
-    if (fetchedUser != null) {
-      setState(() {
-        user = fetchedUser;
-        nameController.text = user!.name;
-        emailController.text = user!.email;
-        usernameController.text = user!.username;
-        bornDateController.text = user!.bornDate.substring(0, 10);
-        imageUrlController.text = user!.imageUrl ?? '';
-      });
-    }
+    // final fetchedUser = await database.userDao.getUserByUsername(widget.username);
+    // if (fetchedUser != null) {
+    //   setState(() {
+    //     user = fetchedUser;
+    //     nameController.text = user!.name;
+    //     emailController.text = user!.email;
+    //     usernameController.text = user!.username;
+    //     bornDateController.text = user!.bornDate.substring(0, 10);
+    //     imageUrlController.text = user!.imageUrl ?? '';
+    //   });
+    // }
   }
 
   void _checkIfModified() {
@@ -61,7 +61,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         imageUrl: imageUrlController.text.isEmpty ? null : imageUrlController.text,
         bornDate: bornDateController.text,
       );
-      await database.userDao.updateUser(updatedUser);
+      // await database.userDao.updateUser(updatedUser);
       setState(() {
         user = updatedUser;
         isModified = false;

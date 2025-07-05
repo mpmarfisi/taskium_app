@@ -33,7 +33,7 @@ class TasksNotifier extends AsyncNotifier<List<Task>> {
   }
 
   Future<void> deleteTask(String id) async {
-    await _tasksRepository.deleteTask(int.parse(id));
+    await _tasksRepository.deleteTask(id);
     await fetchTasks();
   }
 }

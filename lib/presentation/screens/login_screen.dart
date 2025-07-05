@@ -24,8 +24,8 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    final UserDao userDao = database.userDao;
-    final User? user = await userDao.getUserByUsername(usernameController.text);
+    // final UserDao userDao = database.userDao;
+    // final User? user = await userDao.getUserByUsername(usernameController.text);
 
     try {
       final credential = await auth.FirebaseAuth.instance.signInWithEmailAndPassword(

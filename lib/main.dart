@@ -7,7 +7,7 @@ import 'package:taskium/presentation/providers/theme_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'firebase_options.dart';
 
-late AppDatabase database;
+// late AppDatabase database;
 
 Future<void> main() async {
   // Ensure that the binding is initialized
@@ -17,10 +17,10 @@ Future<void> main() async {
   );
 
   // Initialize the database and measure initialization time
-  final stopwatch = Stopwatch()..start();
-  database = await AppDatabase.create('tasks_app_database_final.db');
-  stopwatch.stop();
-  log('Database initialized in ${stopwatch.elapsed.inMilliseconds}ms');
+  // final stopwatch = Stopwatch()..start();
+  // database = await AppDatabase.create('tasks_app_database_final.db');
+  // stopwatch.stop();
+  // log('Database initialized in ${stopwatch.elapsed.inMilliseconds}ms');
   
   runApp(const ProviderScope(
     child: MainApp(),

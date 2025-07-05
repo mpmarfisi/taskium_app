@@ -106,7 +106,7 @@ class HomeNotifier extends Notifier<HomeState> {
     try {
       state = state.copyWith(screenState: HomeScreenState.submitting);
 
-      await _tasksRepository.deleteTask(int.parse(id));
+      await _tasksRepository.deleteTask(id);
       await fetchTasks(userId);
     } catch (e) {
       state = state.copyWith(
