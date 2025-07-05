@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:taskium/domain/task.dart';
 import 'package:taskium/presentation/providers/theme_provider.dart';
 import 'package:taskium/presentation/viewmodels/notifiers/home_notifier.dart';
@@ -18,6 +19,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
+  DateTime _calendarMonth = DateTime(DateTime.now().year, DateTime.now().month);
 
   @override
   void initState() {
@@ -76,8 +78,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         );
       case 1:
-        // Calendar View placeholder
-        return const Center(child: Text('Calendar View (Coming Soon)'));
+        // Upcoming Tasks View (no calendar)
+        return CalendarView(
+          tasks: homeState.tasks,
+          month: _calendarMonth,
+          onPrevMonth: () {
+            setState(() {
+              _calendarMonth = DateTime(_calendarMonth.year, _calendarMonth.month - 1);
+            });
+          },
+          onNextMonth: () {
+            setState(() {
+              _calendarMonth = DateTime(_calendarMonth.year, _calendarMonth.month + 1);
+            });
+          },
+        );
       case 2:
         // Pomodoro View placeholder
         return const Center(child: Text('Pomodoro View (Coming Soon)'));
@@ -312,6 +327,167 @@ class _TasksView extends StatelessWidget {
                 }
               },
             )),
+      ],
+    );
+  }
+}
+
+class CalendarView extends StatelessWidget {
+  final List<Task> tasks;
+  final DateTime month;
+  final VoidCallback onPrevMonth;
+  final VoidCallback onNextMonth;
+
+  const CalendarView({
+    super.key,
+    required this.tasks,
+    required this.month,
+    required this.onPrevMonth,
+    required this.onNextMonth,
+  });
+
+  List<DateTime> _daysInMonth(DateTime month) {
+    final first = DateTime(month.year, month.month, 1);
+    final last = DateTime(month.year, month.month + 1, 0);
+    return List<DateTime>.generate(
+      last.day,
+      (i) => DateTime(month.year, month.month, i + 1),
+    );
+  }
+
+  Map<String, List<Task>> _tasksByDate() {
+    final map = <String, List<Task>>{};
+    for (final task in tasks) {
+      if (task.dueDate == null || task.dueDate!.isEmpty) continue;
+      final date = task.dueDate!.substring(0, 10);
+      map.putIfAbsent(date, () => []).add(task);
+    }
+    return map;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final days = _daysInMonth(month);
+    final tasksByDate = _tasksByDate();
+    final monthFormat = DateFormat.yMMMM();
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chevron_left),
+                onPressed: onPrevMonth,
+              ),
+              Text(
+                monthFormat.format(month),
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right),
+                onPressed: onNextMonth,
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: days.length,
+            itemBuilder: (context, i) {
+              final day = days[i];
+              final dateStr = DateFormat('yyyy-MM-dd').format(day);
+              final dayTasks = tasksByDate[dateStr] ?? [];
+              final isToday = DateTime.now().year == day.year &&
+                  DateTime.now().month == day.month &&
+                  DateTime.now().day == day.day;
+              final hasTasks = dayTasks.isNotEmpty;
+
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                margin: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: hasTasks
+                      ? Theme.of(context).colorScheme.primary.withOpacity(0.07)
+                      : Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isToday
+                        ? Theme.of(context).colorScheme.primary
+                        : Colors.grey.shade300,
+                    width: isToday ? 2 : 1,
+                  ),
+                ),
+                height: hasTasks ? 64.0 + 28.0 * dayTasks.length : 36.0,
+                child: Row(
+                  crossAxisAlignment: hasTasks
+                      ? CrossAxisAlignment.start
+                      : CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 36,
+                      alignment: Alignment.center,
+                      child: Text(
+                        '${day.day}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: isToday
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    if (hasTasks)
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ...dayTasks.map((task) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 4.0),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.circle, size: 8, color: Colors.blueGrey),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          task.title,
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            color: Theme.of(context).colorScheme.primary,
+                                            fontWeight: FontWeight.w500,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          maxLines: 1,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )),
+                          ],
+                        ),
+                      )
+                    else
+                      Expanded(
+                        child: Text(
+                          DateFormat.E().format(day),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
       ],
     );
   }
