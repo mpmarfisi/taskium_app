@@ -17,6 +17,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  int _selectedIndex = 0;
+
   @override
   void initState() {
     super.initState();
@@ -24,6 +26,67 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(homeNotifierProvider.notifier).initialize(widget.username);
     });
+  }
+
+  Widget _buildBody(HomeState homeState, HomeNotifier homeNotifier) {
+    switch (_selectedIndex) {
+      case 0:
+        // Main List
+        return homeState.screenState.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          empty: () => const Center(child: Text('No tasks available.')),
+          error: () => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Error: ${homeState.errorMessage}'),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => homeNotifier.fetchTasks(widget.username),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+          refreshing: () => Stack(
+            children: [
+              _TasksView(
+                tasks: homeState.tasks,
+                onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
+              ),
+              const Center(child: CircularProgressIndicator()),
+            ],
+          ),
+          submitting: () => Stack(
+            children: [
+              _TasksView(
+                tasks: homeState.tasks,
+                onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
+              ),
+              const Center(child: CircularProgressIndicator()),
+            ],
+          ),
+          success: () => _TasksView(
+            tasks: homeState.tasks,
+            onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
+          ),
+          idle: () => _TasksView(
+            tasks: homeState.tasks,
+            onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
+          ),
+        );
+      case 1:
+        // Calendar View placeholder
+        return const Center(child: Text('Calendar View (Coming Soon)'));
+      case 2:
+        // Pomodoro View placeholder
+        return const Center(child: Text('Pomodoro View (Coming Soon)'));
+      case 3:
+        // Stats View placeholder
+        return const Center(child: Text('Stats View (Coming Soon)'));
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   @override
@@ -115,70 +178,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
       ),
-      body: homeState.screenState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        empty: () => const Center(child: Text('No tasks available.')),
-        error: () => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('Error: ${homeState.errorMessage}'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => homeNotifier.fetchTasks(widget.username),
-                child: const Text('Retry'),
+      body: _buildBody(homeState, homeNotifier),
+      floatingActionButton: _selectedIndex == 0
+          ? FloatingActionButton(
+              onPressed: homeState.screenState.isSubmitting ? null : () async {
+                final Task? newTask;
+                try {
+                  newTask = await context.push('/edit', extra: {'userId': widget.username}) as Task?;
+                  if (newTask != null) {
+                    homeNotifier.addTask(newTask);
+                  }
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Error adding task')),
+                  );
+                }
+              },
+              shape: CircleBorder(
+                side: BorderSide(
+                  color: Theme.of(context).primaryColor,
+                  width: 3,
+                ),
               ),
-            ],
-          ),
-        ),
-        refreshing: () => Stack(
-          children: [
-            _TasksView(
-              tasks: homeState.tasks,
-              onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
-            ),
-            const Center(child: CircularProgressIndicator()),
-          ],
-        ),
-        submitting: () => Stack(
-          children: [
-            _TasksView(
-              tasks: homeState.tasks,
-              onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
-            ),
-            const Center(child: CircularProgressIndicator()),
-          ],
-        ),
-        success: () => _TasksView(
-          tasks: homeState.tasks,
-          onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
-        ),
-        idle: () => _TasksView(
-          tasks: homeState.tasks,
-          onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: homeState.screenState.isSubmitting ? null : () async {
-          final Task? newTask;
-          try {
-            newTask = await context.push('/edit', extra: {'userId': widget.username}) as Task?;
-            if (newTask != null) {
-              homeNotifier.addTask(newTask);
-            }
-          } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Error adding task')),
-            );
-          }
+              child: const Icon(Icons.add),
+            )
+          : null,
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
         },
-        shape: CircleBorder(
-          side: BorderSide(
-            color: Theme.of(context).primaryColor,
-            width: 3,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list),
+            label: 'Main List',
           ),
-        ),
-        child: const Icon(Icons.add),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: 'Calendar',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.timer),
+            label: 'Pomodoro',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart),
+            label: 'Stats',
+          ),
+        ],
+        type: BottomNavigationBarType.fixed,
       ),
     );
   }
