@@ -58,6 +58,15 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
           title: const Text('Task Detail'),
           actions: [
             IconButton(
+              icon: const Icon(Icons.add),
+              tooltip: 'Upload file',
+              onPressed: detailState.task == null || detailState.screenState.isLoading || detailState.screenState.isDeleting
+                  ? null
+                  : () async {
+                      await detailNotifier.uploadFile();
+                    },
+            ),
+            IconButton(
               icon: const Icon(Icons.edit),
               onPressed: detailState.task == null || detailState.screenState.isLoading || detailState.screenState.isDeleting
                   ? null
@@ -230,6 +239,48 @@ class SlideFirstView extends StatelessWidget {
                     : 'No description available.',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
+              // Show uploaded files (images/docs)
+              if (task.files.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                const Text('Attachments:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: task.files.map((url) {
+                    // final isImage = url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.gif');
+                    final isImage = RegExp(r'\.(png|jpe?g|gif|webp)(\?|$)', caseSensitive: false).hasMatch(url);
+                    if (isImage) {
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Image.network(
+                          url,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 40),
+                        ),
+                      );
+                    } else {
+                      return GestureDetector(
+                        onTap: () {
+                          // Optionally open the file in browser
+                        },
+                        child: Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Icon(Icons.insert_drive_file, size: 36, color: Colors.blueGrey),
+                        ),
+                      );
+                    }
+                  }).toList(),
+                ),
+                const SizedBox(height: 10),
+              ],
             ],
           ),
         ),

@@ -14,6 +14,7 @@ class Task {
   final String? createdAt;
   final String? completedAt;
   final String userId; // Foreign key to reference the User
+  final List<String> files; // URLs to images/docs
 
   Task({
     this.id,
@@ -28,6 +29,7 @@ class Task {
     this.createdAt,
     this.completedAt,
     required this.userId,
+    this.files = const [],
   });
 
   Map<String, dynamic> toFirestore() {
@@ -43,6 +45,7 @@ class Task {
       'createdAt': createdAt,
       'completedAt': completedAt,
       'userId': userId,
+      'files': files,
     };
     return map;
   }
@@ -66,6 +69,7 @@ class Task {
       createdAt: data?['createdAt'],
       completedAt: data?['completedAt'],
       userId: data?['userId'] ?? '',
+      files: (data?['files'] as List?)?.cast<String>() ?? [],
     );
   }
 }
