@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:taskium/domain/user.dart';
-import 'package:taskium/main.dart'; // Import database instance
+// Import database instance
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, required this.username});
