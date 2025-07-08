@@ -60,6 +60,10 @@ class RegistrationNotifier extends AutoDisposeNotifier<RegistrationState> {
       );
     }
   }
+
+  void setBornDate(String bornDate) {
+    state = state.copyWith(bornDate: bornDate);
+  }
 }
 
 final registrationNotifierProvider = AutoDisposeNotifierProvider<RegistrationNotifier, RegistrationState>(

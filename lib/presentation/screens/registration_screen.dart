@@ -39,10 +39,9 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       lastDate: DateTime.now(),
     );
     if (pickedDate != null) {
-      setState(() {
-        _bornDateController.text =
-            '${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}';
-      });
+      final formattedDate =
+          '${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}';
+      ref.read(registrationNotifierProvider.notifier).setBornDate(formattedDate);
     }
   }
 
@@ -72,9 +71,18 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         );
         context.go('/login');
       }
+      // Update born date controller if changed in state
+      if (next.bornDate != null && _bornDateController.text != next.bornDate) {
+        _bornDateController.text = next.bornDate!;
+      }
     });
 
     final registrationState = ref.watch(registrationNotifierProvider);
+
+    // Ensure controller is in sync with state (for hot reload, etc.)
+    if (registrationState.bornDate != null && _bornDateController.text != registrationState.bornDate) {
+      _bornDateController.text = registrationState.bornDate!;
+    }
 
     return Scaffold(
       appBar: AppBar(

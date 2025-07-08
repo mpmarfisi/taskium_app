@@ -9,13 +9,26 @@ import 'package:taskium/presentation/viewmodels/notifiers/home_notifier.dart';
 import 'package:taskium/presentation/viewmodels/states/home_state.dart';
 import 'package:taskium/presentation/widgets/task_item.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key, required this.username});
 
   final String username;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(homeNotifierProvider.notifier).fetchTasks(widget.username);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themeNotifier = ref.read(themeNotifierProvider.notifier);
     final homeState = ref.watch(homeNotifierProvider);
     final homeNotifier = ref.read(homeNotifierProvider.notifier);
@@ -29,7 +42,8 @@ class HomeScreen extends ConsumerWidget {
         case 0:
           // Main List
           return homeState.screenState.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
+            // loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const Scaffold(),
             empty: () => const Center(child: Text('No tasks available.')),
             error: () => Center(
               child: Column(
@@ -38,7 +52,7 @@ class HomeScreen extends ConsumerWidget {
                   Text('Error: ${homeState.errorMessage}'),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => homeNotifier.fetchTasks(username),
+                    onPressed: () => homeNotifier.fetchTasks(widget.username),
                     child: const Text('Retry'),
                   ),
                 ],
@@ -48,31 +62,30 @@ class HomeScreen extends ConsumerWidget {
               children: [
                 _TasksView(
                   tasks: homeState.tasks,
-                  onTasksUpdated: () => homeNotifier.fetchTasks(username),
+                  onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
                 ),
-                const Center(child: CircularProgressIndicator()),
+                // const Center(child: CircularProgressIndicator()),
               ],
             ),
             submitting: () => Stack(
               children: [
                 _TasksView(
                   tasks: homeState.tasks,
-                  onTasksUpdated: () => homeNotifier.fetchTasks(username),
+                  onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
                 ),
-                const Center(child: CircularProgressIndicator()),
+                // const Center(child: CircularProgressIndicator()),
               ],
             ),
             success: () => _TasksView(
               tasks: homeState.tasks,
-              onTasksUpdated: () => homeNotifier.fetchTasks(username),
+              onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
             ),
             idle: () => _TasksView(
               tasks: homeState.tasks,
-              onTasksUpdated: () => homeNotifier.fetchTasks(username),
+              onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
             ),
           );
         case 1:
-          // Upcoming Tasks View (no calendar)
           return CalendarView(
             tasks: homeState.tasks,
             month: calendarMonth,
@@ -84,10 +97,8 @@ class HomeScreen extends ConsumerWidget {
             ),
           );
         case 2:
-          // Pomodoro View
           return const PomodoroScreen();
         case 3:
-          // Stats View placeholder
           return const Center(child: Text('Stats View (Coming Soon)'));
         default:
           return const SizedBox.shrink();
@@ -126,7 +137,7 @@ class HomeScreen extends ConsumerWidget {
               title: const Text('Profile'),
               onTap: () {
                 context.pop(context); // Close the drawer
-                context.push('/profile', extra: username);
+                context.push('/profile', extra: widget.username);
               },
             ),
             ListTile(
@@ -174,7 +185,7 @@ class HomeScreen extends ConsumerWidget {
       body: selectedIndex == 0
           ? RefreshIndicator(
               onRefresh: () async {
-                await homeNotifier.refreshTasks(username);
+                await homeNotifier.refreshTasks(widget.username);
               },
               child: _buildBody(),
             )
@@ -184,7 +195,7 @@ class HomeScreen extends ConsumerWidget {
               onPressed: homeState.screenState.isSubmitting ? null : () async {
                 final Task? newTask;
                 try {
-                  newTask = await context.push('/edit', extra: {'userId': username}) as Task?;
+                  newTask = await context.push('/edit', extra: {'userId': widget.username}) as Task?;
                   if (newTask != null) {
                     homeNotifier.addTask(newTask);
                   }

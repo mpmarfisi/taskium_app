@@ -54,8 +54,8 @@ class HomeState {
     this.tasks = const [],
     this.errorMessage,
     this.selectedIndex = 0,
-    DateTime? calendarMonth,
-  }) : calendarMonth = calendarMonth ?? const DateTime(0);
+    required this.calendarMonth,
+  });
 
   HomeState copyWith({
     HomeScreenState? screenState,

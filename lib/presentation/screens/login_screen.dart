@@ -40,6 +40,19 @@ class _LoginScreenState extends State<LoginScreen> {
           const SnackBar(content: Text('Incorrect password')),
         );
         print('Wrong password provided for that user.');
+      } else if (e.code == 'invalid-email') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid e-mail format')),
+        );
+      } else if (e.code == 'invalid-credential') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Wrong Password or Email')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.message}')),
+        );
+        print('Error: ${e.message}');
       }
       return;
     }

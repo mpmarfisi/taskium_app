@@ -10,19 +10,23 @@ extension RegistrationScreenStateX on RegistrationScreenState {
 class RegistrationState {
   final RegistrationScreenState screenState;
   final String? errorMessage;
+  final String? bornDate;
 
   const RegistrationState({
     this.screenState = RegistrationScreenState.idle,
     this.errorMessage,
+    this.bornDate,
   });
 
   RegistrationState copyWith({
     RegistrationScreenState? screenState,
     String? errorMessage,
+    String? bornDate,
   }) {
     return RegistrationState(
       screenState: screenState ?? this.screenState,
       errorMessage: errorMessage ?? this.errorMessage,
+      bornDate: bornDate ?? this.bornDate,
     );
   }
 }
