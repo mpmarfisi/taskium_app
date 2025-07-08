@@ -42,6 +42,7 @@ class DetailState {
   final String? localFilePath;
   final bool shouldPreventNavigation;
   final bool isLoadingPdf;
+  final int? galleryIndex;
 
   const DetailState({
     this.screenState = DetailScreenState.idle,
@@ -51,6 +52,7 @@ class DetailState {
     this.localFilePath,
     this.shouldPreventNavigation = false,
     this.isLoadingPdf = false,
+    this.galleryIndex,
   });
 
   DetailState copyWith({
@@ -61,6 +63,7 @@ class DetailState {
     String? localFilePath,
     bool? shouldPreventNavigation,
     bool? isLoadingPdf,
+    int? galleryIndex,
   }) {
     return DetailState(
       screenState: screenState ?? this.screenState,
@@ -70,9 +73,13 @@ class DetailState {
       localFilePath: localFilePath ?? this.localFilePath,
       shouldPreventNavigation: shouldPreventNavigation ?? this.shouldPreventNavigation,
       isLoadingPdf: isLoadingPdf ?? this.isLoadingPdf,
+      galleryIndex: galleryIndex ?? this.galleryIndex,
     );
   }
 
   @override
-  List<Object?> get props => [screenState, task, errorMessage, hasChanges, localFilePath, shouldPreventNavigation, isLoadingPdf];
+  List<Object?> get props => [
+    screenState, task, errorMessage, hasChanges, localFilePath,
+    shouldPreventNavigation, isLoadingPdf, galleryIndex
+  ];
 }

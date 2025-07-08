@@ -553,36 +553,35 @@ class SlideSecondView extends StatelessWidget {
   }
 }
 
-class GalleryView extends StatefulWidget {
+class GalleryView extends ConsumerWidget {
   final List<String> images;
   final int initialIndex;
   const GalleryView({super.key, required this.images, required this.initialIndex});
 
   @override
-  State<GalleryView> createState() => _GalleryViewState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final detailNotifier = ref.read(detailNotifierProvider.notifier);
+    final detailState = ref.watch(detailNotifierProvider);
 
-class _GalleryViewState extends State<GalleryView> {
-  late int currentIndex;
+    // Initialize gallery index if not set
+    if (detailState.galleryIndex == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        detailNotifier.setGalleryIndex(initialIndex);
+      });
+    }
 
-  @override
-  void initState() {
-    super.initState();
-    currentIndex = widget.initialIndex;
-  }
+    final currentIndex = detailState.galleryIndex ?? initialIndex;
 
-  @override
-  Widget build(BuildContext context) {
     return Stack(
       children: [
         PageView.builder(
           controller: PageController(initialPage: currentIndex),
-          itemCount: widget.images.length,
-          onPageChanged: (i) => setState(() => currentIndex = i),
+          itemCount: images.length,
+          onPageChanged: (i) => detailNotifier.setGalleryIndex(i),
           itemBuilder: (context, i) {
             return Center(
               child: InteractiveViewer(
-                child: Image.network(widget.images[i]),
+                child: Image.network(images[i]),
               ),
             );
           },

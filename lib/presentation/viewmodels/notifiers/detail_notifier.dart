@@ -30,6 +30,7 @@ class DetailNotifier extends AutoDisposeNotifier<DetailState> {
       errorMessage: null,
       hasChanges: false,
       shouldPreventNavigation: false, // Reset navigation prevention
+      galleryIndex: null, // Reset gallery index on new task
     );
   }
 
@@ -210,6 +211,14 @@ class DetailNotifier extends AutoDisposeNotifier<DetailState> {
       screenState: DetailScreenState.idle,
       errorMessage: null,
     );
+  }
+
+  void setGalleryIndex(int index) {
+    state = state.copyWith(galleryIndex: index);
+  }
+
+  void clearGalleryIndex() {
+    state = state.copyWith(galleryIndex: null);
   }
 
   bool shouldNavigateBack() {
