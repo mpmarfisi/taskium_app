@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:taskium/domain/task.dart';
 import 'package:taskium/presentation/providers/theme_provider.dart';
+import 'package:taskium/presentation/screens/pomodoro_screen.dart';
 import 'package:taskium/presentation/viewmodels/notifiers/home_notifier.dart';
 import 'package:taskium/presentation/viewmodels/states/home_state.dart';
 import 'package:taskium/presentation/widgets/task_item.dart';
@@ -94,8 +95,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           },
         );
       case 2:
-        // Pomodoro View placeholder
-        return const Center(child: Text('Pomodoro View (Coming Soon)'));
+        // Pomodoro View
+        return const PomodoroScreen();
       case 3:
         // Stats View placeholder
         return const Center(child: Text('Stats View (Coming Soon)'));
@@ -332,7 +333,7 @@ class _TasksView extends StatelessWidget {
   }
 }
 
-class CalendarView extends StatelessWidget {
+class CalendarView extends StatefulWidget {
   final List<Task> tasks;
   final DateTime month;
   final VoidCallback onPrevMonth;
@@ -346,6 +347,54 @@ class CalendarView extends StatelessWidget {
     required this.onNextMonth,
   });
 
+  @override
+  State<CalendarView> createState() => _CalendarViewState();
+}
+
+class _CalendarViewState extends State<CalendarView> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToCurrentDay();
+    });
+  }
+
+  @override
+  void didUpdateWidget(CalendarView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.month != widget.month) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToCurrentDay();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToCurrentDay() {
+    final today = DateTime.now();
+    if (today.year == widget.month.year && today.month == widget.month.month) {
+      final todayIndex = today.day - 2;
+      const itemHeight = 74.0; // Approximate height of each day item
+      final targetOffset = todayIndex * itemHeight - 100; // Center with some offset
+      
+      if (_scrollController.hasClients && targetOffset > 0) {
+        _scrollController.animateTo(
+          targetOffset,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    }
+  }
+
   List<DateTime> _daysInMonth(DateTime month) {
     final first = DateTime(month.year, month.month, 1);
     final last = DateTime(month.year, month.month + 1, 0);
@@ -357,7 +406,7 @@ class CalendarView extends StatelessWidget {
 
   Map<String, List<Task>> _tasksByDate() {
     final map = <String, List<Task>>{};
-    for (final task in tasks) {
+    for (final task in widget.tasks) {
       if (task.dueDate == null || task.dueDate!.isEmpty) continue;
       final date = task.dueDate!.substring(0, 10);
       map.putIfAbsent(date, () => []).add(task);
@@ -367,7 +416,7 @@ class CalendarView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final days = _daysInMonth(month);
+    final days = _daysInMonth(widget.month);
     final tasksByDate = _tasksByDate();
     final monthFormat = DateFormat.yMMMM();
 
@@ -380,21 +429,22 @@ class CalendarView extends StatelessWidget {
             children: [
               IconButton(
                 icon: const Icon(Icons.chevron_left),
-                onPressed: onPrevMonth,
+                onPressed: widget.onPrevMonth,
               ),
               Text(
-                monthFormat.format(month),
+                monthFormat.format(widget.month),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               IconButton(
                 icon: const Icon(Icons.chevron_right),
-                onPressed: onNextMonth,
+                onPressed: widget.onNextMonth,
               ),
             ],
           ),
         ),
         Expanded(
           child: ListView.builder(
+            controller: _scrollController,
             itemCount: days.length,
             itemBuilder: (context, i) {
               final day = days[i];
@@ -422,23 +472,23 @@ class CalendarView extends StatelessWidget {
                     width: isToday ? 2 : 1,
                   ),
                 ),
-                height: hasTasks ? 64.0 + 28.0 * dayTasks.length : 36.0,
+                height: hasTasks ? 64.0 + 28.0 * dayTasks.length : 50.0,
                 child: Row(
-                  crossAxisAlignment: hasTasks
-                      ? CrossAxisAlignment.start
-                      : CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Container(
+                    SizedBox(
                       width: 36,
-                      alignment: Alignment.center,
-                      child: Text(
-                        '${day.day}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: isToday
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.onSurface,
+                      height: 36,
+                      child: Center(
+                        child: Text(
+                          '${day.day}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: isToday
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
                       ),
                     ),
@@ -447,6 +497,7 @@ class CalendarView extends StatelessWidget {
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             ...dayTasks.map((task) => Padding(
                                   padding: const EdgeInsets.only(bottom: 4.0),
@@ -474,11 +525,13 @@ class CalendarView extends StatelessWidget {
                       )
                     else
                       Expanded(
-                        child: Text(
-                          DateFormat.E().format(day),
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                            fontSize: 13,
+                        child: Center(
+                          child: Text(
+                            DateFormat.E().format(day),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ),

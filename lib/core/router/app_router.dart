@@ -6,6 +6,8 @@ import 'package:taskium/presentation/screens/home_screen.dart';
 import 'package:taskium/presentation/screens/login_screen.dart';
 import 'package:taskium/presentation/screens/profile_screen.dart';
 import 'package:taskium/presentation/screens/settings_screen.dart';
+import 'package:taskium/presentation/screens/pomodoro_settings_screen.dart';
+import 'package:taskium/presentation/viewmodels/states/pomodoro_state.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/login',
@@ -51,6 +53,13 @@ final appRouter = GoRouter(
         final task = extra['task'] as Task?;
         final userId = extra['userId'] as String;
         return EditScreen(task: task, userId: userId);
+      },
+    ),
+    GoRoute(
+      path: '/pomodoro-settings',
+      builder: (context, state) {
+        final settings = state.extra as PomodoroSettings;
+        return PomodoroSettingsScreen(settings: settings);
       },
     ),
     // Add more routes here
