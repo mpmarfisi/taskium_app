@@ -166,6 +166,41 @@ class DetailNotifier extends AutoDisposeNotifier<DetailState> {
     }
   } 
 
+  Future<void> removeAttachment(String url) async {
+    final task = state.task;
+    if (task == null) return;
+    try {
+      state = state.copyWith(screenState: DetailScreenState.loading);
+      final updatedFiles = List<String>.from(task.files)..remove(url);
+      final updatedTask = Task(
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        imageUrl: task.imageUrl,
+        dueDate: task.dueDate,
+        category: task.category,
+        priority: task.priority,
+        progress: task.progress,
+        isCompleted: task.isCompleted,
+        createdAt: task.createdAt,
+        completedAt: task.completedAt,
+        userId: task.userId,
+        files: updatedFiles,
+      );
+      await _tasksRepository.updateTask(updatedTask);
+      state = state.copyWith(
+        screenState: DetailScreenState.idle,
+        task: updatedTask,
+        hasChanges: true,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        screenState: DetailScreenState.error,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
   void setIdle() {
     state = state.copyWith(screenState: DetailScreenState.idle);
   }

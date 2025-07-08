@@ -270,56 +270,51 @@ class SlideFirstView extends ConsumerWidget {
                         final lowerUrl = url.toLowerCase();
                         final isImage = RegExp(r'\.(png|jpe?g|gif|webp)(\?|$)').hasMatch(lowerUrl);
                         final isPdf = lowerUrl.contains('.pdf');
+                        Widget preview;
                         if (isImage) {
                           final imageFiles = task.files.where((u) =>
                             RegExp(r'\.(png|jpe?g|gif|webp)(\?|$)').hasMatch(u.toLowerCase())
                           ).toList();
                           final imageIndex = imageFiles.indexOf(url);
-                          return GestureDetector(
+                          preview = GestureDetector(
                             onTap: () => _showImageGallery(context, imageFiles, imageIndex),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(6),
-                              child: Stack(
-                                children: [
-                                  Image.network(
-                                    url,
-                                    width: 60,
-                                    height: 60,
-                                    fit: BoxFit.cover,
-                                    loadingBuilder: (context, child, loadingProgress) {
-                                      if (loadingProgress == null) return child;
-                                      return Container(
-                                        width: 60,
-                                        height: 60,
-                                        decoration: BoxDecoration(
+                              child: SizedBox(
+                                width: 150,
+                                height: 150,
+                                child: Stack(
+                                  children: [
+                                    Positioned.fill(
+                                      child: Image.network(
+                                        url,
+                                        fit: BoxFit.cover,
+                                        loadingBuilder: (context, child, loadingProgress) {
+                                          if (loadingProgress == null) return child;
+                                          return Container(
+                                            color: Colors.grey[200],
+                                            child: const Center(
+                                              child: SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child: CircularProgressIndicator(),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        errorBuilder: (context, error, stackTrace) => Container(
                                           color: Colors.grey[200],
-                                          borderRadius: BorderRadius.circular(6),
+                                          child: const Icon(Icons.broken_image, size: 40, color: Colors.grey),
                                         ),
-                                        child: Center(
-                                          child: SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child: CircularProgressIndicator(),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    errorBuilder: (context, error, stackTrace) => Container(
-                                      width: 60,
-                                      height: 60,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[200],
-                                        borderRadius: BorderRadius.circular(6),
                                       ),
-                                      child: const Icon(Icons.broken_image, size: 40, color: Colors.grey),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           );
                         } else if (isPdf) {
-                          return GestureDetector(
+                          preview = GestureDetector(
                             onTap: detailState.isLoadingPdf ? null : () async {
                               try {
                                 final filePath = await detailNotifier.getPdfFile(url);
@@ -362,18 +357,44 @@ class SlideFirstView extends ConsumerWidget {
                             child: Stack(
                               children: [
                                 Container(
-                                  width: 60,
-                                  height: 60,
+                                  width: 150,
+                                  height: 150,
                                   decoration: BoxDecoration(
                                     color: Colors.grey[200],
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: const Icon(Icons.picture_as_pdf, size: 36, color: Colors.red),
                                 ),
+                                // PDF filename overlay
+                                Positioned(
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.7),
+                                      borderRadius: const BorderRadius.only(
+                                        bottomLeft: Radius.circular(6),
+                                        bottomRight: Radius.circular(6),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      _extractPdfName(url),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      maxLines: 1,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
                                 if (detailState.isLoadingPdf)
                                   Container(
-                                    width: 60,
-                                    height: 60,
+                                    width: 150,
+                                    height: 150,
                                     decoration: BoxDecoration(
                                       color: Colors.black.withOpacity(0.5),
                                       borderRadius: BorderRadius.circular(6),
@@ -382,10 +403,7 @@ class SlideFirstView extends ConsumerWidget {
                                       child: SizedBox(
                                         width: 20,
                                         height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
+                                        child: CircularProgressIndicator()
                                       ),
                                     ),
                                   ),
@@ -393,8 +411,50 @@ class SlideFirstView extends ConsumerWidget {
                             ),
                           );
                         } else {
-                          return const SizedBox.shrink();
+                          preview = const SizedBox.shrink();
                         }
+                        return Stack(
+                          children: [
+                            preview,
+                            Positioned(
+                              top: 0,
+                              right: 0,
+                              child: Material(
+                                color: Colors.transparent,
+                                child: IconButton(
+                                  icon: const Icon(Icons.cancel, color: Colors.red, size: 20),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  tooltip: 'Remove attachment',
+                                  onPressed: detailState.screenState == DetailScreenState.loading
+                                      ? null
+                                      : () async {
+                                          final confirmed = await showDialog<bool>(
+                                            context: context,
+                                            builder: (ctx) => AlertDialog(
+                                              title: const Text('Remove Attachment'),
+                                              content: const Text('Remove this attachment from the task? (File will remain in storage)'),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.of(ctx).pop(false),
+                                                  child: const Text('Cancel'),
+                                                ),
+                                                FilledButton(
+                                                  onPressed: () => Navigator.of(ctx).pop(true),
+                                                  child: const Text('Remove'),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                          if (confirmed == true) {
+                                            await detailNotifier.removeAttachment(url);
+                                          }
+                                        },
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
                       }),
                   ],
                 ),
@@ -405,6 +465,29 @@ class SlideFirstView extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  // Add this helper function inside SlideFirstView (below the class fields, above build)
+  String _extractPdfName(String url) {
+    try {
+      final uri = Uri.parse(url);
+      final path = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : '';
+      // path is like: tasks%2FlfK5zIDfluaEEbsCzGnA%2F1751940583840_LM2575-D%20(1).PDF
+      final decoded = Uri.decodeComponent(path);
+      // decoded: tasks/lfK5zIDfluaEEbsCzGnA/1751940583840_LM2575-D (1).PDF
+      final parts = decoded.split('/');
+      final fileName = parts.isNotEmpty ? parts.last : decoded;
+      // fileName: 1751940583840_LM2575-D (1).PDF
+      final nameMatch = RegExp(r'^\d+_(.+)$').firstMatch(fileName);
+      String name = nameMatch != null ? nameMatch.group(1)! : fileName;
+      // Normalize extension to .pdf
+      name = name.replaceAllMapped(RegExp(r'\.PDF$', caseSensitive: false), (m) => '.pdf');
+      // Remove spaces before extension
+      name = name.replaceAll(RegExp(r'\s+\.'), '.');
+      return name;
+    } catch (_) {
+      return 'PDF';
+    }
   }
 }
 
