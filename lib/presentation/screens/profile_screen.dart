@@ -15,27 +15,17 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController nameController;
-  late TextEditingController emailController;
-  late TextEditingController usernameController;
-  late TextEditingController bornDateController;
-  late TextEditingController imageUrlController;
-  bool _controllersInitialized = false;
-
+  final nameController = TextEditingController();
+  final emailController = TextEditingController();
+  final usernameController = TextEditingController();
+  final bornDateController = TextEditingController();
+  final imageUrlController = TextEditingController();
+  
   @override
   void initState() {
     super.initState();
-    nameController = TextEditingController();
-    emailController = TextEditingController();
-    usernameController = TextEditingController();
-    bornDateController = TextEditingController();
-    imageUrlController = TextEditingController();
-    
-    // Load user data
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        ref.read(profileNotifierProvider.notifier).loadUser(widget.username);
-      }
+      ref.read(profileNotifierProvider.notifier).loadUser(widget.username);
     });
   }
 
@@ -49,23 +39,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.dispose();
   }
 
-  void _populateControllers(User user) {
-    if (!mounted) return;
-    nameController.text = user.name;
-    emailController.text = user.email;
-    usernameController.text = user.username;
-    bornDateController.text = user.bornDate.substring(0, 10);
-    imageUrlController.text = user.imageUrl ?? '';
-    _controllersInitialized = true;
-  }
-
   void _checkIfModified() {
-    if (!mounted || !_controllersInitialized) return;
-
     final user = ref.read(profileNotifierProvider).user;
     if (user != null) {
       final hasChanges = nameController.text != user.name ||
           emailController.text != user.email ||
+          usernameController.text != user.username ||
           bornDateController.text != user.bornDate.substring(0, 10) ||
           imageUrlController.text != (user.imageUrl ?? '');
       
@@ -74,25 +53,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _saveChanges() async {
-    if (!mounted || !(_formKey.currentState?.validate() ?? false)) return;
-
-    final currentUser = ref.read(profileNotifierProvider).user;
-    if (currentUser != null) {
-      final updatedUser = User(
-        username: currentUser.username,
-        name: nameController.text,
-        email: emailController.text,
-        password: currentUser.password,
-        imageUrl: imageUrlController.text.isEmpty ? null : imageUrlController.text,
-        bornDate: bornDateController.text,
-      );
-      
-      await ref.read(profileNotifierProvider.notifier).updateUser(updatedUser);
+    if (_formKey.currentState?.validate() ?? false) {
+      final currentUser = ref.read(profileNotifierProvider).user;
+      if (currentUser != null) {
+        final updatedUser = User(
+          username: currentUser.username,
+          name: nameController.text,
+          email: emailController.text,
+          imageUrl: imageUrlController.text.isEmpty ? null : imageUrlController.text,
+          bornDate: bornDateController.text,
+        );
+        
+        await ref.read(profileNotifierProvider.notifier).updateUser(updatedUser);
+      }
     }
   }
 
   Future<void> _selectBornDate() async {
-    if (!mounted) return;
     final user = ref.read(profileNotifierProvider).user;
     final DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -100,10 +77,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
     );
-    if (pickedDate != null && mounted) {
+    if (pickedDate != null) {
       final formattedDate = '${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}';
       bornDateController.text = formattedDate;
-      ref.read(profileNotifierProvider.notifier).updateBornDate(formattedDate);
       _checkIfModified();
     }
   }
@@ -130,14 +106,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final profileState = ref.watch(profileNotifierProvider);
     final profileNotifier = ref.read(profileNotifierProvider.notifier);
 
-    // Update controllers when user data is loaded
     ref.listen<ProfileState>(profileNotifierProvider, (previous, next) {
-      if (mounted && next.user != null && (previous?.user != next.user || !_controllersInitialized)) {
-        _populateControllers(next.user!);
+      // Populate controllers when user data is first loaded or changes.
+      if (next.user != null && previous?.user != next.user) {
+        nameController.text = next.user!.name;
+        emailController.text = next.user!.email;
+        usernameController.text = next.user!.username;
+        bornDateController.text = next.user!.bornDate.substring(0, 10);
+        imageUrlController.text = next.user!.imageUrl ?? '';
       }
-      
+
       // Show success message
-      if (mounted && next.screenState.isUpdated && previous?.screenState.isUpdating == true) {
+      if (next.screenState.isUpdated && previous?.screenState.isUpdating == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Profile updated successfully'),
@@ -161,7 +141,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('Error: ${profileState.errorMessage}'),
+              Text('Error: ${profileState.errorMessage ?? "Unknown error"}'),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => profileNotifier.loadUser(widget.username),
@@ -187,7 +167,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget _buildProfileForm(ProfileState profileState, ProfileNotifier profileNotifier) {
     final user = profileState.user;
     if (user == null) {
-      return const Center(child: Text('No user data available'));
+      return const Center(child: CircularProgressIndicator());
     }
 
     return Padding(
@@ -221,6 +201,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   labelText: 'Username',
                   border: OutlineInputBorder(),
                 ),
+                onChanged: (_) => _checkIfModified(),
               ),
               const SizedBox(height: 20),
               TextFormField(

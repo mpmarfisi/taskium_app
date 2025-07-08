@@ -50,13 +50,6 @@ class ProfileNotifier extends AutoDisposeNotifier<ProfileState> {
         hasChanges: false,
         imageLoadError: false,
       );
-      
-      // Reset to idle after showing success
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (state.screenState == ProfileScreenState.updated) {
-          state = state.copyWith(screenState: ProfileScreenState.idle);
-        }
-      });
     } catch (e) {
       state = state.copyWith(
         screenState: ProfileScreenState.error,
@@ -71,7 +64,6 @@ class ProfileNotifier extends AutoDisposeNotifier<ProfileState> {
         username: state.user!.username,
         name: state.user!.name,
         email: state.user!.email,
-        password: state.user!.password,
         imageUrl: state.user!.imageUrl,
         bornDate: bornDate,
       );
@@ -112,6 +104,12 @@ class ProfileNotifier extends AutoDisposeNotifier<ProfileState> {
   void _checkForChanges() {
     // This would need access to the form controllers
     // For now, we'll rely on the UI to call setHasChanges
+  }
+
+  void setIdle() {
+    if (state.screenState == ProfileScreenState.updated) {
+      state = state.copyWith(screenState: ProfileScreenState.idle);
+    }
   }
 
   void clearError() {

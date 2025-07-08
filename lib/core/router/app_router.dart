@@ -5,6 +5,7 @@ import 'package:taskium/presentation/screens/edit_screen.dart';
 import 'package:taskium/presentation/screens/home_screen.dart';
 import 'package:taskium/presentation/screens/login_screen.dart';
 import 'package:taskium/presentation/screens/profile_screen.dart';
+import 'package:taskium/presentation/screens/registration_screen.dart';
 import 'package:taskium/presentation/screens/settings_screen.dart';
 import 'package:taskium/presentation/screens/pomodoro_settings_screen.dart';
 import 'package:taskium/presentation/viewmodels/states/pomodoro_state.dart';
@@ -15,6 +16,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/login',
       builder: (context, state) => const LoginScreen(),
+    ),
+    GoRoute(
+      path: '/register',
+      builder: (context, state) => const RegistrationScreen(),
     ),
     GoRoute(
       path: '/home',

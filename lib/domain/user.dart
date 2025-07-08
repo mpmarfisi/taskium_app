@@ -4,7 +4,6 @@ class User {
   final String username;
   final String name;
   final String email;
-  final String password;
   final String? imageUrl;
   final String bornDate;
 
@@ -12,7 +11,6 @@ class User {
     required this.username,
     required this.name,
     required this.email,
-    required this.password,
     required this.bornDate,
     this.imageUrl,
   });
@@ -22,7 +20,6 @@ class User {
       'username': username,
       'name': name,
       'email': email,
-      'password': password,
       'imageUrl': imageUrl,
       'bornDate': bornDate,
     };
@@ -38,7 +35,6 @@ class User {
       username: data?['username'] ?? snapshot.id,
       name: data?['name'] ?? '',
       email: data?['email'] ?? '',
-      password: data?['password'] ?? '',
       imageUrl: data?['imageUrl'],
       bornDate: data?['bornDate'] ?? '',
     );
@@ -48,7 +44,6 @@ class User {
     String? username,
     String? name,
     String? email,
-    String? password,
     String? imageUrl,
     String? bornDate,
   }) {
@@ -56,7 +51,6 @@ class User {
       username: username ?? this.username,
       name: name ?? this.name,
       email: email ?? this.email,
-      password: password ?? this.password,
       imageUrl: imageUrl ?? this.imageUrl,
       bornDate: bornDate ?? this.bornDate,
     );
@@ -69,7 +63,6 @@ class User {
         other.username == username &&
         other.name == name &&
         other.email == email &&
-        other.password == password &&
         other.imageUrl == imageUrl &&
         other.bornDate == bornDate;
   }
@@ -79,13 +72,12 @@ class User {
     return username.hashCode ^
         name.hashCode ^
         email.hashCode ^
-        password.hashCode ^
         imageUrl.hashCode ^
         bornDate.hashCode;
   }
 
   @override
   String toString() {
-    return 'User{username: $username, name: $name, email: $email, password: $password}';
+    return 'User{username: $username, name: $name, email: $email}';
   }
 }

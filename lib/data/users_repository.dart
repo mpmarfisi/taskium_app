@@ -11,7 +11,7 @@ class UsersRepository implements FirebaseUserDataSource {
     try {
       final querySnapshot = await _firestore
           .collection(_collection)
-          .where('username', isEqualTo: username)
+          .where('email', isEqualTo: username)
           .withConverter(
             fromFirestore: User.fromFirestore,
             toFirestore: (User user, _) => user.toFirestore(),
