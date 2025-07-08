@@ -13,7 +13,11 @@ class HomeNotifier extends Notifier<HomeState> {
   @override
   HomeState build() {
     _tasksRepository = ref.read(tasksRepositoryProvider);
-    return const HomeState(screenState: HomeScreenState.idle);
+    return HomeState(
+      screenState: HomeScreenState.idle,
+      selectedIndex: 0,
+      calendarMonth: DateTime(DateTime.now().year, DateTime.now().month),
+    );
   }
 
   Future<void> initialize([String? userId]) async {
@@ -114,6 +118,15 @@ class HomeNotifier extends Notifier<HomeState> {
         errorMessage: e.toString(),
       );
     }
+  }
+
+  // Add MVVM state management for navigation and calendar
+  void setSelectedIndex(int index) {
+    state = state.copyWith(selectedIndex: index);
+  }
+
+  void setCalendarMonth(DateTime month) {
+    state = state.copyWith(calendarMonth: month);
   }
 
   void setIdle() {

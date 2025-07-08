@@ -46,26 +46,34 @@ class HomeState {
   final HomeScreenState screenState;
   final List<Task> tasks;
   final String? errorMessage;
+  final int selectedIndex;
+  final DateTime calendarMonth;
 
   const HomeState({
     this.screenState = HomeScreenState.idle,
     this.tasks = const [],
     this.errorMessage,
-  });
+    this.selectedIndex = 0,
+    DateTime? calendarMonth,
+  }) : calendarMonth = calendarMonth ?? const DateTime(0);
 
   HomeState copyWith({
     HomeScreenState? screenState,
     List<Task>? tasks,
     String? errorMessage,
+    int? selectedIndex,
+    DateTime? calendarMonth,
   }) {
     return HomeState(
       screenState: screenState ?? this.screenState,
       tasks: tasks ?? this.tasks,
       errorMessage: errorMessage ?? this.errorMessage,
+      selectedIndex: selectedIndex ?? this.selectedIndex,
+      calendarMonth: calendarMonth ?? this.calendarMonth,
     );
   }
 
   @override
-  List<Object?> get props => [screenState, tasks, errorMessage];
+  List<Object?> get props => [screenState, tasks, errorMessage, selectedIndex, calendarMonth];
 }
 

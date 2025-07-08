@@ -9,117 +9,94 @@ import 'package:taskium/presentation/viewmodels/notifiers/home_notifier.dart';
 import 'package:taskium/presentation/viewmodels/states/home_state.dart';
 import 'package:taskium/presentation/widgets/task_item.dart';
 
-class HomeScreen extends ConsumerStatefulWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key, required this.username});
 
   final String username;
 
   @override
-  ConsumerState<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends ConsumerState<HomeScreen> {
-  int _selectedIndex = 0;
-  DateTime _calendarMonth = DateTime(DateTime.now().year, DateTime.now().month);
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize with user's tasks
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(homeNotifierProvider.notifier).initialize(widget.username);
-    });
-  }
-
-  Widget _buildBody(HomeState homeState, HomeNotifier homeNotifier) {
-    switch (_selectedIndex) {
-      case 0:
-        // Main List
-        return homeState.screenState.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          empty: () => const Center(child: Text('No tasks available.')),
-          error: () => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Error: ${homeState.errorMessage}'),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => homeNotifier.fetchTasks(widget.username),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
-          refreshing: () => Stack(
-            children: [
-              _TasksView(
-                tasks: homeState.tasks,
-                onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
-              ),
-              const Center(child: CircularProgressIndicator()),
-            ],
-          ),
-          submitting: () => Stack(
-            children: [
-              _TasksView(
-                tasks: homeState.tasks,
-                onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
-              ),
-              const Center(child: CircularProgressIndicator()),
-            ],
-          ),
-          success: () => _TasksView(
-            tasks: homeState.tasks,
-            onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
-          ),
-          idle: () => _TasksView(
-            tasks: homeState.tasks,
-            onTasksUpdated: () => homeNotifier.fetchTasks(widget.username),
-          ),
-        );
-      case 1:
-        // Upcoming Tasks View (no calendar)
-        return CalendarView(
-          tasks: homeState.tasks,
-          month: _calendarMonth,
-          onPrevMonth: () {
-            setState(() {
-              _calendarMonth = DateTime(_calendarMonth.year, _calendarMonth.month - 1);
-            });
-          },
-          onNextMonth: () {
-            setState(() {
-              _calendarMonth = DateTime(_calendarMonth.year, _calendarMonth.month + 1);
-            });
-          },
-        );
-      case 2:
-        // Pomodoro View
-        return const PomodoroScreen();
-      case 3:
-        // Stats View placeholder
-        return const Center(child: Text('Stats View (Coming Soon)'));
-      default:
-        return const SizedBox.shrink();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final themeNotifier = ref.read(themeNotifierProvider.notifier);
     final homeState = ref.watch(homeNotifierProvider);
     final homeNotifier = ref.read(homeNotifierProvider.notifier);
 
+    // Use state from notifier instead of local state
+    final selectedIndex = homeState.selectedIndex;
+    final calendarMonth = homeState.calendarMonth;
+
+    Widget _buildBody() {
+      switch (selectedIndex) {
+        case 0:
+          // Main List
+          return homeState.screenState.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            empty: () => const Center(child: Text('No tasks available.')),
+            error: () => Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Error: ${homeState.errorMessage}'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => homeNotifier.fetchTasks(username),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+            refreshing: () => Stack(
+              children: [
+                _TasksView(
+                  tasks: homeState.tasks,
+                  onTasksUpdated: () => homeNotifier.fetchTasks(username),
+                ),
+                const Center(child: CircularProgressIndicator()),
+              ],
+            ),
+            submitting: () => Stack(
+              children: [
+                _TasksView(
+                  tasks: homeState.tasks,
+                  onTasksUpdated: () => homeNotifier.fetchTasks(username),
+                ),
+                const Center(child: CircularProgressIndicator()),
+              ],
+            ),
+            success: () => _TasksView(
+              tasks: homeState.tasks,
+              onTasksUpdated: () => homeNotifier.fetchTasks(username),
+            ),
+            idle: () => _TasksView(
+              tasks: homeState.tasks,
+              onTasksUpdated: () => homeNotifier.fetchTasks(username),
+            ),
+          );
+        case 1:
+          // Upcoming Tasks View (no calendar)
+          return CalendarView(
+            tasks: homeState.tasks,
+            month: calendarMonth,
+            onPrevMonth: () => homeNotifier.setCalendarMonth(
+              DateTime(calendarMonth.year, calendarMonth.month - 1),
+            ),
+            onNextMonth: () => homeNotifier.setCalendarMonth(
+              DateTime(calendarMonth.year, calendarMonth.month + 1),
+            ),
+          );
+        case 2:
+          // Pomodoro View
+          return const PomodoroScreen();
+        case 3:
+          // Stats View placeholder
+          return const Center(child: Text('Stats View (Coming Soon)'));
+        default:
+          return const SizedBox.shrink();
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Home'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => homeNotifier.refreshTasks(widget.username),
-          ),
-        ],
       ),
       drawer: Drawer(
         child: ListView(
@@ -149,7 +126,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               title: const Text('Profile'),
               onTap: () {
                 context.pop(context); // Close the drawer
-                context.push('/profile', extra: widget.username);
+                context.push('/profile', extra: username);
               },
             ),
             ListTile(
@@ -194,13 +171,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
       ),
-      body: _buildBody(homeState, homeNotifier),
-      floatingActionButton: _selectedIndex == 0
+      body: selectedIndex == 0
+          ? RefreshIndicator(
+              onRefresh: () async {
+                await homeNotifier.refreshTasks(username);
+              },
+              child: _buildBody(),
+            )
+          : _buildBody(),
+      floatingActionButton: selectedIndex == 0
           ? FloatingActionButton(
               onPressed: homeState.screenState.isSubmitting ? null : () async {
                 final Task? newTask;
                 try {
-                  newTask = await context.push('/edit', extra: {'userId': widget.username}) as Task?;
+                  newTask = await context.push('/edit', extra: {'userId': username}) as Task?;
                   if (newTask != null) {
                     homeNotifier.addTask(newTask);
                   }
@@ -220,11 +204,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             )
           : null,
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
+        currentIndex: selectedIndex,
         onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
+          homeNotifier.setSelectedIndex(index);
         },
         items: const [
           BottomNavigationBarItem(
@@ -289,7 +271,8 @@ class _TasksView extends StatelessWidget {
 
   Widget _buildPriorityLabel(String label, Color color) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      // padding: const EdgeInsets.symmetric(vertical: 2.0),
+      padding: const EdgeInsets.only(top: 12.0),
       child: Text(
         label,
         style: TextStyle(
@@ -317,6 +300,7 @@ class _TasksView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildPriorityLabel(label, color),
+        Divider(),
         ...filteredTasks.map((task) => TaskItem(
               task: task,
               onTap: () async {
