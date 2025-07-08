@@ -14,11 +14,9 @@ import 'package:http/http.dart' as http;
 class DetailScreen extends ConsumerStatefulWidget {
   const DetailScreen({
     super.key,
-    // required this.taskId,
     required this.task,
   });
 
-  // final String taskId;
   final Task task;
 
   @override
@@ -26,12 +24,9 @@ class DetailScreen extends ConsumerStatefulWidget {
 }
 
 class _DetailScreenState extends ConsumerState<DetailScreen> {
-  bool _hasPoppedAfterDelete = false;
-
   @override
   void initState() {
     super.initState();
-    _hasPoppedAfterDelete = false;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(detailNotifierProvider.notifier).initialize(widget.task);
     });
@@ -41,7 +36,6 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   void didUpdateWidget(DetailScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.task != widget.task) {
-      _hasPoppedAfterDelete = false;
       ref.read(detailNotifierProvider.notifier).initialize(widget.task);
     }
   }
@@ -51,121 +45,126 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     final detailState = ref.watch(detailNotifierProvider);
     final detailNotifier = ref.read(detailNotifierProvider.notifier);
 
-    return WillPopScope(
-      onWillPop: () async {
-        if (_hasPoppedAfterDelete) {
-          return false;
-        }
-        context.pop(detailState.hasChanges);
-        return false;
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Task Detail'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.add),
-              tooltip: 'Upload file',
-              onPressed: detailState.task == null || detailState.screenState.isLoading || detailState.screenState.isDeleting
-                  ? null
-                  : () async {
-                      await detailNotifier.uploadFile();
-                    },
-            ),
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: detailState.task == null || detailState.screenState.isLoading || detailState.screenState.isDeleting
-                  ? null
-                  : () async {
-                      final updatedTask = await context.push('/edit', extra: {
-                        'task': detailState.task,
-                        'userId': detailState.task!.userId
-                      });
-                      if (updatedTask != null) {
-                        detailNotifier.updateTask(updatedTask as Task);
-                      }
-                    },
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: detailState.task == null || detailState.screenState.isLoading || detailState.screenState.isDeleting
-                  ? null
-                  : () async {
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: const Text('Delete Task'),
-                            content: const Text('Are you sure you want to delete this task?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => context.pop(),
-                                child: const Text('Cancel'),
-                              ),
-                              FilledButton(
-                                onPressed: () async {
-                                  context.pop();
-                                  await detailNotifier.deleteTask();
-                                },
-                                child: const Text('Delete'),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-            ),
-          ],
-        ),
-        body: detailState.screenState.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          idle: () => detailState.task == null
-              ? TaskDetailView(task: widget.task) // Use widget.task as fallback
-              : TaskDetailView(task: detailState.task!),
-          error: () => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Error: ${detailState.errorMessage}'),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => detailNotifier.clearError(),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
-          deleting: () => const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Deleting task...'),
-              ],
-            ),
-          ),
-          deleted: () {
-            if (!_hasPoppedAfterDelete) {
-              _hasPoppedAfterDelete = true;
-              Future.delayed(const Duration(milliseconds: 1000), () {
-                if (mounted && context.canPop()) {
-                  context.pop(true);
-                }
-              });
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Task Detail'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (detailNotifier.shouldPreventNavigation()) {
+              return;
             }
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.check_circle, color: Colors.green, size: 64),
-                  SizedBox(height: 16),
-                  Text('Task deleted successfully'),
-                ],
-              ),
-            );
+            context.pop(detailNotifier.shouldNavigateBack());
           },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'Upload file',
+            onPressed: detailState.task == null || detailState.screenState.isLoading || detailState.screenState.isDeleting
+                ? null
+                : () async {
+                    await detailNotifier.uploadFile();
+                  },
+          ),
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: detailState.task == null || detailState.screenState.isLoading || detailState.screenState.isDeleting
+                ? null
+                : () async {
+                    final updatedTask = await context.push('/edit', extra: {
+                      'task': detailState.task,
+                      'userId': detailState.task!.userId
+                    });
+                    if (updatedTask != null) {
+                      detailNotifier.updateTask(updatedTask as Task);
+                    }
+                  },
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: detailState.task == null || detailState.screenState.isLoading || detailState.screenState.isDeleting
+                ? null
+                : () async {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: const Text('Delete Task'),
+                          content: const Text('Are you sure you want to delete this task?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => context.pop(),
+                              child: const Text('Cancel'),
+                            ),
+                            FilledButton(
+                              onPressed: () async {
+                                context.pop();
+                                await detailNotifier.deleteTask();
+                              },
+                              child: const Text('Delete'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+          ),
+        ],
+      ),
+      body: detailState.screenState.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        idle: () => detailState.task == null
+            ? TaskDetailView(
+                task: widget.task,
+                detailState: detailState,
+                detailNotifier: detailNotifier,
+              )
+            : TaskDetailView(
+                task: detailState.task!,
+                detailState: detailState,
+                detailNotifier: detailNotifier,
+              ),
+        error: () => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Error: ${detailState.errorMessage}'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => detailNotifier.clearError(),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+        deleting: () => const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Deleting task...'),
+            ],
+          ),
+        ),
+        deleted: () {
+          Future.delayed(const Duration(milliseconds: 1000), () {
+            if (mounted && context.canPop()) {
+              context.pop(true);
+            }
+          });
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.check_circle, color: Colors.green, size: 64),
+                SizedBox(height: 16),
+                Text('Task deleted successfully'),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -175,37 +174,40 @@ class TaskDetailView extends StatelessWidget {
   const TaskDetailView({
     super.key,
     required this.task,
+    required this.detailState,
+    required this.detailNotifier,
   });
 
   final Task task;
+  final DetailState detailState;
+  final DetailNotifier detailNotifier;
 
   @override
   Widget build(BuildContext context) {
     return PageView(
       children: [
-        SlideFirstView(task: task),
-        SlideSecondView(task: task), // Combined view
+        SlideFirstView(
+          task: task,
+          detailState: detailState,
+          detailNotifier: detailNotifier,
+        ),
+        SlideSecondView(task: task),
       ],
     );
   }
 }
 
-class SlideFirstView extends StatefulWidget {
+class SlideFirstView extends ConsumerWidget {
   const SlideFirstView({
     super.key,
     required this.task,
+    required this.detailState,
+    required this.detailNotifier,
   });
 
   final Task task;
-
-  @override
-  State<SlideFirstView> createState() => _SlideFirstViewState();
-}
-
-class _SlideFirstViewState extends State<SlideFirstView> {
-  String? _pdfUrlToShow;
-  String? _localPdfPath;
-  bool _loadingPdf = false;
+  final DetailState detailState;
+  final DetailNotifier detailNotifier;
 
   void _showImageGallery(BuildContext context, List<String> images, int initialIndex) {
     showDialog(
@@ -220,85 +222,8 @@ class _SlideFirstViewState extends State<SlideFirstView> {
     );
   }
 
-  void _openFileUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-
-  Future<void> _showPdfInline(String url) async {
-    setState(() {
-      _loadingPdf = true;
-      _pdfUrlToShow = url;
-      _localPdfPath = null;
-    });
-    try {
-      final response = await http.get(Uri.parse(url));
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/temp_${DateTime.now().millisecondsSinceEpoch}.pdf');
-      await file.writeAsBytes(response.bodyBytes, flush: true);
-      setState(() {
-        _localPdfPath = file.path;
-      });
-      // Show PDF in a dialog
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) {
-            return Dialog(
-              backgroundColor: Colors.black,
-              insetPadding: EdgeInsets.zero,
-              child: Stack(
-                children: [
-                  SizedBox(
-                    // height: 500,
-                    // width: 350,
-                    child: _localPdfPath != null
-                        ? PDFView(
-                            filePath: _localPdfPath!,
-                            enableSwipe: true,
-                            swipeHorizontal: true,
-                            autoSpacing: false,
-                            pageFling: false,
-                          )
-                        : const Center(child: CircularProgressIndicator()),
-                  ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Colors.black, size: 28),
-                      onPressed: () => context.pop(),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      }
-    } catch (_) {
-      setState(() {
-        _localPdfPath = null;
-      });
-    } finally {
-      setState(() {
-        _loadingPdf = false;
-      });
-    }
-  }
-
-  void _closePdfInline() {
-    setState(() {
-      _pdfUrlToShow = null;
-      _localPdfPath = null;
-    });
-  }
-
   @override
-  Widget build(BuildContext context) {
-    final task = widget.task;
+  Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Card(
@@ -309,26 +234,7 @@ class _SlideFirstViewState extends State<SlideFirstView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-                if (task.imageUrl != null) ...[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                    task.imageUrl!,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
-                      Icons.broken_image,
-                      size: 100,
-                      color: Colors.grey,
-                      );
-                    },
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-                Text(
+              Text(
                 task.title,
                 style: Theme.of(context).textTheme.displayLarge,
               ),
@@ -344,12 +250,11 @@ class _SlideFirstViewState extends State<SlideFirstView> {
                     : 'No description available.',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
-              // Show uploaded files (images/docs)
               if (task.files.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 const Text('Attachments:', style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 6),
-                if (_loadingPdf) ...[
+                if (detailState.screenState == DetailScreenState.loading) ...[
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
                     child: Center(child: CircularProgressIndicator()),
@@ -366,7 +271,6 @@ class _SlideFirstViewState extends State<SlideFirstView> {
                         final isImage = RegExp(r'\.(png|jpe?g|gif|webp)(\?|$)').hasMatch(lowerUrl);
                         final isPdf = lowerUrl.contains('.pdf');
                         if (isImage) {
-                          // Find all image files for gallery
                           final imageFiles = task.files.where((u) =>
                             RegExp(r'\.(png|jpe?g|gif|webp)(\?|$)').hasMatch(u.toLowerCase())
                           ).toList();
@@ -386,30 +290,80 @@ class _SlideFirstViewState extends State<SlideFirstView> {
                           );
                         } else if (isPdf) {
                           return GestureDetector(
-                            onTap: () => _showPdfInline(url),
-                            child: Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: const Icon(Icons.picture_as_pdf, size: 36, color: Colors.red),
+                            onTap: detailState.isLoadingPdf ? null : () async {
+                              try {
+                                final filePath = await detailNotifier.getPdfFile(url);
+                                if (filePath != null && context.mounted) {
+                                  showDialog(
+                                    context: context,
+                                    builder: (dialogContext) {
+                                      return Dialog(
+                                        backgroundColor: Colors.black,
+                                        insetPadding: EdgeInsets.zero,
+                                        child: Stack(
+                                          children: [
+                                            PDFViewDialog(filePath: filePath),
+                                            Positioned(
+                                              top: 8,
+                                              right: 8,
+                                              child: IconButton(
+                                                icon: const Icon(Icons.close, color: Colors.black, size: 28),
+                                                onPressed: () => context.pop(),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  );
+                                } else if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Error loading PDF')),
+                                  );
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Error loading PDF: $e')),
+                                  );
+                                }
+                              }
+                            },
+                            child: Stack(
+                              children: [
+                                Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Icon(Icons.picture_as_pdf, size: 36, color: Colors.red),
+                                ),
+                                if (detailState.isLoadingPdf)
+                                  Container(
+                                    width: 60,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.5),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Center(
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           );
                         } else {
-                          return GestureDetector(
-                            onTap: () => _openFileUrl(url),
-                            child: Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: const Icon(Icons.insert_drive_file, size: 36, color: Colors.blueGrey),
-                            ),
-                          );
+                          return const SizedBox.shrink();
                         }
                       }),
                   ],
@@ -486,7 +440,6 @@ class SlideSecondView extends StatelessWidget {
   }
 }
 
-// Add this widget at the end of the file
 class GalleryView extends StatefulWidget {
   final List<String> images;
   final int initialIndex;
@@ -534,17 +487,16 @@ class _GalleryViewState extends State<GalleryView> {
   }
 }
 
-
-class PDFView extends StatefulWidget {
+class PDFViewDialog extends StatefulWidget {
   final String filePath;
 
-  const PDFView({super.key, required this.filePath});
+  const PDFViewDialog({super.key, required this.filePath});
 
   @override
-  _PDFViewState createState() => _PDFViewState();
+  _PDFViewDialogState createState() => _PDFViewDialogState();
 }
 
-class _PDFViewState extends State<PDFView> {
+class _PDFViewDialogState extends State<PDFViewDialog> {
   @override
   Widget build(BuildContext context) {
     return PDFView(
@@ -553,6 +505,12 @@ class _PDFViewState extends State<PDFView> {
       swipeHorizontal: true,
       autoSpacing: false,
       pageFling: false,
+      onError: (error) {
+        print('PDF Error: $error');
+      },
+      onPageError: (page, error) {
+        print('PDF Page Error: $error');
+      },
     );
   }
 }

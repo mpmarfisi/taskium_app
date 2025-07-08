@@ -39,12 +39,18 @@ class DetailState {
   final Task? task;
   final String? errorMessage;
   final bool hasChanges;
+  final String? localFilePath;
+  final bool shouldPreventNavigation;
+  final bool isLoadingPdf;
 
   const DetailState({
     this.screenState = DetailScreenState.idle,
     this.task,
     this.errorMessage,
     this.hasChanges = false,
+    this.localFilePath,
+    this.shouldPreventNavigation = false,
+    this.isLoadingPdf = false,
   });
 
   DetailState copyWith({
@@ -52,15 +58,21 @@ class DetailState {
     Task? task,
     String? errorMessage,
     bool? hasChanges,
+    String? localFilePath,
+    bool? shouldPreventNavigation,
+    bool? isLoadingPdf,
   }) {
     return DetailState(
       screenState: screenState ?? this.screenState,
       task: task ?? this.task,
       errorMessage: errorMessage ?? this.errorMessage,
       hasChanges: hasChanges ?? this.hasChanges,
+      localFilePath: localFilePath ?? this.localFilePath,
+      shouldPreventNavigation: shouldPreventNavigation ?? this.shouldPreventNavigation,
+      isLoadingPdf: isLoadingPdf ?? this.isLoadingPdf,
     );
   }
 
   @override
-  List<Object?> get props => [screenState, task, errorMessage, hasChanges];
+  List<Object?> get props => [screenState, task, errorMessage, hasChanges, localFilePath, shouldPreventNavigation, isLoadingPdf];
 }
