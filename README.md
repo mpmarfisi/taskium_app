@@ -11,12 +11,12 @@ Firebase related files that need to be added based on [Firebase Project Setup](h
 
 | Login | Home | Calendar |
 |-------|------|----------|
-| <img src="images/login.png" alt="Login Screen" width="300" height="600" style="object-fit: cover; aspect-ratio: 1/2;"/> | <img src="images/home.png" alt="Home Screen" width="300" height="600" style="object-fit: cover; aspect-ratio: 1/2;"/> | <img src="images/calendar.png" alt="Calendar Screen" width="300" height="600" style="object-fit: cover; aspect-ratio: 1/2;"/> |
+| <img src="images/login.png" alt="Login Screen" width="300"/> | <img src="images/home.png" alt="Home Screen" width="300"/> | <img src="images/calendar.png" alt="Calendar Screen" width="300"/> |
 
 | Pomodoro | Detail | Detail (Part 2) |
 |----------|--------|-----------------|
-| <img src="images/pomodoro.png" alt="Pomodoro Screen" width="300" height="600" style="object-fit: cover; aspect-ratio: 1/2;"/> | <img src="images/detail.png" alt="Detail Screen P1" width="300" height="600" style="object-fit: cover; aspect-ratio: 1/2;"/> | <img src="images/detail2.png" alt="Detail Screen P2" width="300" height="600" style="object-fit: cover; aspect-ratio: 1/2;"/> |
+| <img src="images/pomodoro.png" alt="Pomodoro Screen" width="300"/> | <img src="images/detail.png" alt="Detail Screen P1" width="300"/> | <img src="images/detail2.png" alt="Detail Screen P2" width="300"/> |
 
-| Add/Edit |
-|----------|
-| <img src="images/add_edit.png" alt="Add/Edit Screen" width="300" height="600" style="object-fit: cover; aspect-ratio: 1/2;"/> |
+| Add/Edit | | |
+|----------|---|---|
+| <img src="images/add_edit.png" alt="Add/Edit Screen" width="300"/> | | |
