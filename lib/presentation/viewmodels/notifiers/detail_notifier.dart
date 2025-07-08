@@ -23,7 +23,6 @@ class DetailNotifier extends AutoDisposeNotifier<DetailState> {
   }
 
   void initialize(Task task) {
-    print('DetailNotifier: Initializing with task: ${task.id} - ${task.title}'); // Debug print
     state = state.copyWith(
       screenState: DetailScreenState.idle,
       task: task,

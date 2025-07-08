@@ -42,8 +42,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         case 0:
           // Main List
           return homeState.screenState.when(
-            // loading: () => const Center(child: CircularProgressIndicator()),
-            loading: () => const Scaffold(),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            // loading: () => const Scaffold(),
             empty: () => const Center(child: Text('No tasks available.')),
             error: () => Center(
               child: Column(
@@ -315,7 +315,6 @@ class _TasksView extends StatelessWidget {
         ...filteredTasks.map((task) => TaskItem(
               task: task,
               onTap: () async {
-                print('Navigating to task details with task: ${task.id}'); // Debug print
                 // final hasChanges = await context.push('/task-details/${task.id}', extra: task) as bool?;
                 final hasChanges = await context.push('/task-details/', extra: task) as bool?;
                 if (hasChanges == true) {

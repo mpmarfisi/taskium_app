@@ -31,7 +31,6 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } on auth.FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
-        print('No user found for that email.');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Username does not exist')),
         );
@@ -39,7 +38,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Incorrect password')),
         );
-        print('Wrong password provided for that user.');
       } else if (e.code == 'invalid-email') {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invalid e-mail format')),
@@ -52,7 +50,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: ${e.message}')),
         );
-        print('Error: ${e.message}');
       }
       return;
     }

@@ -19,7 +19,11 @@ class TaskItem extends StatelessWidget {
             ? _getImage(task.imageUrl!)
             : const Icon(Icons.task, size: 40),
         title: Text(task.title.isNotEmpty ? task.title : 'Untitled Task'),
-        subtitle: Text(task.description.isNotEmpty ? task.description : 'No description'),
+        subtitle: Text(
+          task.description.isNotEmpty ? task.description : 'No description',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         trailing: const Icon(Icons.arrow_forward_ios),
         onTap: onTap,
       ),

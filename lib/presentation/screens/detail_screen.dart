@@ -613,10 +613,10 @@ class _PDFViewDialogState extends State<PDFViewDialog> {
       autoSpacing: false,
       pageFling: false,
       onError: (error) {
-        print('PDF Error: $error');
+        // print('PDF Error: $error');
       },
       onPageError: (page, error) {
-        print('PDF Page Error: $error');
+        // print('PDF Page Error: $error');
       },
     );
   }
