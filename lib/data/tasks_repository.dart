@@ -70,8 +70,6 @@ class TasksRepository implements FirebaseTaskDataSource {
     try {
       // Use add() to let Firestore generate the document ID
       final docRef = await tasksCollection.add(task);
-      // Optionally, update the task with the generated ID if you want to store it in the document
-      // await docRef.set(task.copyWith(id: docRef.id));
     } catch (e) {
       throw Exception('Failed to add task: $e');
     }

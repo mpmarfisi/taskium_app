@@ -44,6 +44,46 @@ class User {
     );
   }
 
+  User copyWith({
+    String? username,
+    String? name,
+    String? email,
+    String? password,
+    String? imageUrl,
+    String? bornDate,
+  }) {
+    return User(
+      username: username ?? this.username,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      password: password ?? this.password,
+      imageUrl: imageUrl ?? this.imageUrl,
+      bornDate: bornDate ?? this.bornDate,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is User &&
+        other.username == username &&
+        other.name == name &&
+        other.email == email &&
+        other.password == password &&
+        other.imageUrl == imageUrl &&
+        other.bornDate == bornDate;
+  }
+
+  @override
+  int get hashCode {
+    return username.hashCode ^
+        name.hashCode ^
+        email.hashCode ^
+        password.hashCode ^
+        imageUrl.hashCode ^
+        bornDate.hashCode;
+  }
+
   @override
   String toString() {
     return 'User{username: $username, name: $name, email: $email, password: $password}';
