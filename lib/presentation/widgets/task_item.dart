@@ -15,9 +15,13 @@ class TaskItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: ListTile(
-        leading: task.imageUrl != null
-            ? _getImage(task.imageUrl!)
-            : const Icon(Icons.task, size: 40),
+        leading: Icon(
+                task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+                color: task.isCompleted ? Colors.green : Colors.grey,
+              ),
+        // leading: task.imageUrl != null
+        //     ? _getImage(task.imageUrl!)
+        //     : const Icon(Icons.task, size: 40),
         title: Text(task.title.isNotEmpty ? task.title : 'Untitled Task'),
         subtitle: Text(
           task.description.isNotEmpty ? task.description : 'No description',
