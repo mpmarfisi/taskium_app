@@ -386,11 +386,7 @@ class _CalendarViewState extends State<CalendarView> {
       final targetOffset = todayIndex * itemHeight - 100; // Center with some offset
       
       if (_scrollController.hasClients && targetOffset > 0) {
-        _scrollController.animateTo(
-          targetOffset,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
+        _scrollController.jumpTo(targetOffset); // <-- changed from animateTo to jumpTo
       }
     }
   }
