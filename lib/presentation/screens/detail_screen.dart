@@ -1,15 +1,10 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:taskium/domain/task.dart';
 import 'package:taskium/presentation/viewmodels/notifiers/detail_notifier.dart';
 import 'package:taskium/presentation/viewmodels/states/detail_state.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:http/http.dart' as http;
 
 class DetailScreen extends ConsumerStatefulWidget {
   const DetailScreen({
@@ -239,17 +234,17 @@ class SlideFirstView extends ConsumerWidget {
                 style: Theme.of(context).textTheme.displayLarge,
               ),
               const Divider(),
-              Text(
-                'Description:',
-                style: Theme.of(context).textTheme.displayMedium,
-              ),
               const SizedBox(height: 10),
-              Text(
-                task.description.isNotEmpty
-                    ? task.description
-                    : 'No description available.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+              if(task.description.isNotEmpty) ...[
+                // Text(
+                //   'Description:',
+                //   style: Theme.of(context).textTheme.displayMedium,
+                // ),
+                Text(
+                  task.description,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
               if (task.files.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 const Text('Attachments:', style: TextStyle(fontWeight: FontWeight.bold)),

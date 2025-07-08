@@ -153,9 +153,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         updating: () => Stack(
           children: [
             _buildProfileForm(profileState, profileNotifier),
-            const Center(
-              child: CircularProgressIndicator(),
-            ),
+            // const Center(
+            //   child: CircularProgressIndicator(),
+            // ),
           ],
         ),
         updated: () => _buildProfileForm(profileState, profileNotifier),
@@ -206,6 +206,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               const SizedBox(height: 20),
               TextFormField(
                 controller: emailController,
+                readOnly: true,
                 decoration: const InputDecoration(
                   labelText: 'Email',
                   border: OutlineInputBorder(),

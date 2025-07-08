@@ -98,6 +98,16 @@ class DetailNotifier extends AutoDisposeNotifier<DetailState> {
       final uploadTask = await storageRef.putData(file.bytes!);
       final url = await uploadTask.ref.getDownloadURL();
 
+      // If the file is a PDF, also store it in the temp directory
+      if (file.extension?.toLowerCase() == 'pdf') {
+        final dir = await getTemporaryDirectory();
+        final filename = 'taskium_${url.hashCode}.pdf';
+        final tempFile = File('${dir.path}/$filename');
+        await tempFile.writeAsBytes(file.bytes!, flush: true);
+        // Optionally, update state.localFilePath if you want to use it immediately
+        state = state.copyWith(localFilePath: tempFile.path);
+      }
+
       // Update task with new file URL
       final updatedTask = Task(
         id: task.id,
